@@ -1,0 +1,25 @@
+project_id = "rtljfxgxpgzabbsmqwno"
+
+[functions.check-expiring-subscriptions]
+verify_jwt = false
+
+[functions.auth-resend-confirmation]
+verify_jwt = false
+
+[functions.auth-forgot-password]
+verify_jwt = false
+
+[functions.auth-welcome-email]
+verify_jwt = false
+
+[functions.tenant-contact]
+verify_jwt = false
+
+[functions.storefront-search]
+verify_jwt = false
+
+[functions.tenant-domain]
+verify_jwt = false
+
+[functions.tenant-upload-logo]
+verify_jwt = false
