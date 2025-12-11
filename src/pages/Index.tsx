@@ -183,10 +183,10 @@ const Index = () => {
               {/* Headline */}
               <motion.h1
                 variants={itemVariants}
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+                className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold leading-tight mb-6"
               >
                 Transforme seu WhatsApp em uma{" "}
-                <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-transparent">
                   máquina de vendas
                 </span>
               </motion.h1>
@@ -387,7 +387,7 @@ const Index = () => {
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-sm font-medium text-red-600 dark:text-red-400 mb-4">
               Problemas que resolvemos
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
               Chega de perder vendas
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

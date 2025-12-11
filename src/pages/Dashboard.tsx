@@ -18,6 +18,11 @@ import ThemesManager from "@/components/dashboard/ThemesManager";
 import OnboardingWizard from "@/components/dashboard/OnboardingWizard";
 import QRCodeGenerator from "@/components/dashboard/QRCodeGenerator";
 import CommandPalette from "@/components/dashboard/CommandPalette";
+import CouponsManager from "@/components/dashboard/CouponsManager";
+import CustomersManager from "@/components/dashboard/CustomersManager";
+import OrdersManager from "@/components/dashboard/OrdersManager";
+import CatalogExport from "@/components/dashboard/CatalogExport";
+import StockManager from "@/components/dashboard/StockManager";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -43,7 +48,11 @@ import {
   TrendingUp,
   Users,
   ShoppingCart,
-  Eye
+  Eye,
+  Ticket,
+  UserCircle,
+  FileDown,
+  Boxes
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -222,7 +231,12 @@ const Dashboard = () => {
     { id: "categories", label: "Categorias", icon: Tags },
     { id: "banners", label: "Banners", icon: Image },
     { id: "quotes", label: "Orçamentos", icon: FileText },
+    { id: "orders", label: "Pedidos", icon: ShoppingCart },
+    { id: "customers", label: "Clientes", icon: UserCircle },
+    { id: "coupons", label: "Cupons", icon: Ticket },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "stock", label: "Estoque", icon: Boxes },
+    { id: "catalog", label: "Catálogo PDF", icon: FileDown },
     { id: "themes", label: "Aparência", icon: Palette },
     { id: "qrcode", label: "QR Code", icon: QrCode },
     { id: "notifications", label: "Notificações", icon: Bell },
@@ -422,7 +436,12 @@ const Dashboard = () => {
             {activeTab === "categories" && <CategoriesManager tenantId={tenant.id} />}
             {activeTab === "banners" && <BannersManager tenantId={tenant.id} />}
             {activeTab === "quotes" && <QuotesManager tenantId={tenant.id} />}
+            {activeTab === "orders" && <OrdersManager tenantId={tenant.id} />}
+            {activeTab === "customers" && <CustomersManager tenantId={tenant.id} />}
+            {activeTab === "coupons" && <CouponsManager tenantId={tenant.id} />}
             {activeTab === "analytics" && <AnalyticsDashboard tenantId={tenant.id} />}
+            {activeTab === "stock" && <StockManager tenantId={tenant.id} />}
+            {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} />}
             {activeTab === "themes" && <ThemesManager tenantId={tenant.id} />}
             {activeTab === "qrcode" && <QRCodeGenerator storeUrl={storeUrl} storeName={tenant.company_name} />}
             {activeTab === "notifications" && <NotificationsManager tenantId={tenant.id} />}

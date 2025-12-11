@@ -39,37 +39,64 @@ export const StorefrontProductGrid = ({
     <div className={gridClasses}>
       {products.map((product) => {
         const imgs = Array.isArray(product.images) ? product.images : [];
-        // fallback: se não houver images, usar image_url como primeira imagem
         const mediaImages = imgs.length > 0 ? imgs : (product.image_url ? [product.image_url] : []);
         const safeImages = mediaImages.length > 0 ? mediaImages : [DEFAULT_PRODUCT_IMAGE];
 
         return (
-          <Card key={product.id} className="overflow-hidden">
-            <CardContent className="p-3 sm:p-4">
+          <div
+            key={product.id}
+            className="group relative bg-card rounded-xl border border-border/50 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          >
+            <div className="relative aspect-square overflow-hidden bg-muted/20">
               <StorefrontMediaCarousel
                 images={safeImages}
                 videoUrl={product.video_url || undefined}
-                heightClass="h-36 sm:h-44 lg:h-48"
+                heightClass="h-full w-full object-cover"
               />
-              <h3 className="font-semibold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 line-clamp-2">
-                {product.name}
-              </h3>
-              {product.description && (
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">
-                  {product.description}
-                </p>
-              )}
-              <p className="text-base sm:text-lg font-bold mb-2">
-                {product.price ? `R$ ${product.price.toFixed(2)}` : "Consulte"}
-              </p>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                Qtd mínima: {product.min_quantity}
-              </p>
-              <Button onClick={() => onAddToCart(product)} className="w-full text-xs sm:text-sm" size="sm">
-                Adicionar
-              </Button>
-            </CardContent>
-          </Card>
+              {/* Quick Add Overlay (Desktop) */}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none lg:pointer-events-auto">
+                <Button
+                  onClick={() => onAddToCart(product)}
+                  className="rounded-full shadow-lg font-medium translate-y-4 group-hover:translate-y-0 transition-transform duration-300 bg-white text-black hover:bg-white/90 hover:scale-105"
+                  size="sm"
+                >
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-2">
+              <div className="space-y-1">
+                <h3 className="font-heading font-semibold text-base leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                  {product.name}
+                </h3>
+                {product.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {product.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-end justify-between pt-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">A partir de {product.min_quantity} un</p>
+                  <p className="text-lg font-bold text-primary font-heading">
+                    {product.price ? `R$ ${product.price.toFixed(2)}` : "Consulte"}
+                  </p>
+                </div>
+
+                {/* Mobile Add Button (Visible only on mobile/touch where hover doesn't work well) */}
+                <Button
+                  onClick={() => onAddToCart(product)}
+                  size="icon"
+                  className="rounded-full h-8 w-8 lg:hidden shrink-0 shadow-sm"
+                >
+                  <span className="sr-only">Adicionar</span>
+                  <span className="text-lg leading-none mb-0.5">+</span>
+                </Button>
+              </div>
+            </div>
+          </div>
         );
       })}
     </div>

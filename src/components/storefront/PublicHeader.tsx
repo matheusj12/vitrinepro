@@ -91,24 +91,22 @@ export const PublicHeader = ({
     : undefined;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b glass transition-all duration-300">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link to={`/loja/${slug}`} className="flex items-center gap-2">
+        <Link to={`/loja/${slug}`} className="flex items-center gap-2 group">
           {logoUrl ? (
             <img
               src={logoUrl}
               alt={storeName}
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
             />
           ) : (
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">
-                  {storeName.charAt(0).toUpperCase()}
-                </span>
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 font-bold text-white text-xl">
+                {storeName.charAt(0).toUpperCase()}
               </div>
-              <span className="font-semibold text-lg hidden sm:inline">
+              <span className="font-heading font-bold text-xl hidden sm:inline tracking-tight text-foreground/90">
                 {storeName}
               </span>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantBySlug } from "@/hooks/useTenant";
@@ -455,6 +455,34 @@ const Storefront = () => {
 
       {/* Social Proof Widget */}
       <SocialProofWidget tenantId={tenant?.id || ""} enabled={true} />
+
+      {/* Sticky Cart Bar (Mobile/Desktop) */}
+      <StickyCartBar slug={slug} />
+    </div>
+  );
+};
+
+const StickyCartBar = ({ slug }: { slug: string }) => {
+  const { items, getTotalPrice } = useCart();
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = getTotalPrice();
+
+  // Só mostra se tiver itens
+  if (totalItems === 0) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 p-4 z-40 md:hidden">
+      <div className="bg-foreground text-background rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-in slide-in-from-bottom-5 duration-300">
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-background/80">{totalItems} iten{totalItems !== 1 && 's'}</span>
+          <span className="font-bold text-lg">R$ {totalPrice.toFixed(2)}</span>
+        </div>
+        <Link to={`/loja/${slug}/carrinho`}>
+          <Button size="sm" className="bg-background text-foreground hover:bg-background/90 font-bold px-6 rounded-xl">
+            Ver Carrinho
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

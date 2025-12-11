@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import SuperAdmin from "./pages/SuperAdmin";
 import Storefront from "./pages/Storefront";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/superadmin" element={<SuperAdmin />} />
           <Route path="/loja/:slug" element={<Storefront />} />
           <Route path="/loja/:slug/carrinho" element={<Cart />} />
+          <Route path="/loja/:slug/checkout" element={<Checkout />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -9,6 +9,7 @@ interface CartStore {
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
+  getTotalPrice: () => number;
 }
 
 export const useCart = create<CartStore>()(
@@ -18,7 +19,7 @@ export const useCart = create<CartStore>()(
       addItem: (product, quantity) => {
         const items = get().items;
         const existingItem = items.find(item => item.product.id === product.id);
-        
+
         if (existingItem) {
           set({
             items: items.map(item =>
@@ -48,6 +49,9 @@ export const useCart = create<CartStore>()(
       clearCart: () => set({ items: [] }),
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+      getTotalPrice: () => {
+        return get().items.reduce((total, item) => total + (item.product.price || 0) * item.quantity, 0);
       },
     }),
     {

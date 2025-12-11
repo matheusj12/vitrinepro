@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, X, Plus, Link as LinkIcon, Video, Copy } from "lucide-react";
+import { Upload, X, Plus, Link as LinkIcon, Video, Copy, Sparkles, Loader2 } from "lucide-react";
+import { generateProductDescription } from "@/services/ai-product-service";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/default-product-512.png";
 const MAX_IMAGES = 5;
@@ -115,6 +116,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
 
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", tenantId],
@@ -451,10 +453,49 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                 />
               </div>
               <div>
-                <Label>Descrição</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Descrição</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!formData.name || isGeneratingDescription}
+                    onClick={async () => {
+                      if (!formData.name) {
+                        toast.error("Digite o nome do produto primeiro");
+                        return;
+                      }
+                      setIsGeneratingDescription(true);
+                      try {
+                        const selectedCategory = categories.find(c => c.id === formData.category_id);
+                        const result = await generateProductDescription(
+                          formData.name,
+                          selectedCategory?.name,
+                          formData.description
+                        );
+                        setFormData(prev => ({ ...prev, description: result.description }));
+                        toast.success("Descrição gerada com IA!");
+                      } catch (error: any) {
+                        toast.error(error.message || "Erro ao gerar descrição");
+                      } finally {
+                        setIsGeneratingDescription(false);
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    {isGeneratingDescription ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 mr-1" />
+                    )}
+                    Gerar com IA
+                  </Button>
+                </div>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Descreva seu produto ou clique em 'Gerar com IA'..."
+                  rows={4}
                 />
               </div>
               <div>
@@ -559,8 +600,8 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                       className="hidden"
                     />
                     <Label
-                        htmlFor="video-upload"
-                        className="flex items-center gap-2 cursor-pointer border border-input rounded-md px-4 py-2 hover:bg-accent hover:text-accent-foreground transition-colors w-fit"
+                      htmlFor="video-upload"
+                      className="flex items-center gap-2 cursor-pointer border border-input rounded-md px-4 py-2 hover:bg-accent hover:text-accent-foreground transition-colors w-fit"
                     >
                       <Video className="h-4 w-4" />
                       <span className="text-sm">Enviar Vídeo (MP4/MOV)</span>
