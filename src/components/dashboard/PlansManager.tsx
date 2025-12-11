@@ -57,13 +57,36 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
             return;
         }
 
-        // Se é plano pago, por enquanto só mostra mensagem
-        // TODO: Integrar com gateway de pagamento
+        // Se é plano pago, chamar checkout
         if (plan.price_cents > 0) {
-            toast.info("Integração de pagamento em breve!", {
-                description: "Entre em contato pelo WhatsApp para fazer upgrade.",
-                duration: 5000,
-            });
+            setChangingPlan(plan.id);
+            try {
+                // Tenta Mercado Pago primeiro, depois Asaas
+                const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+                    body: {
+                        planId: plan.id,
+                        gateway: "mercadopago", // ou "asaas"
+                        successUrl: window.location.origin + "/dashboard?payment=success",
+                        cancelUrl: window.location.origin + "/dashboard?payment=canceled"
+                    },
+                });
+
+                if (error) throw error;
+
+                if (data?.checkoutUrl) {
+                    window.location.href = data.checkoutUrl;
+                } else {
+                    throw new Error("URL de checkout não retornada");
+                }
+            } catch (err: any) {
+                console.error("Checkout error:", err);
+                toast.error("Erro ao iniciar checkout", {
+                    description: err.message || "Verifique se os gateways estão configurados no SuperAdmin.",
+                    duration: 5000,
+                });
+            } finally {
+                setChangingPlan(null);
+            }
             return;
         }
 

@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Users, ShoppingBag, FileText, Activity, Settings } from "lucide-react";
+import { Users, ShoppingBag, FileText, Activity, Settings, CreditCard } from "lucide-react";
 import UsersManager from "@/components/superadmin/UsersManager";
 import { LogsViewer } from "@/components/superadmin/LogsViewer";
 import PlansManager from "@/components/superadmin/PlansManager";
 import SystemSettings from "@/components/superadmin/SystemSettings";
+import PaymentSettingsManager from "@/components/superadmin/PaymentSettingsManager";
 
 interface DashboardData {
   metrics: {
@@ -40,9 +41,9 @@ const SuperAdmin = () => {
   const loadDashboard = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('superadmin-dashboard');
-      
+
       if (error) throw error;
-      
+
       setDashboard(data);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
@@ -90,6 +91,7 @@ const SuperAdmin = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="plans">Planos</TabsTrigger>
+            <TabsTrigger value="payments"><CreditCard className="h-4 w-4 mr-1" />Pagamentos</TabsTrigger>
             <TabsTrigger value="settings"><Settings className="h-4 w-4 mr-1" />Configurações</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
@@ -206,6 +208,10 @@ const SuperAdmin = () => {
                 <PlansManager />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <PaymentSettingsManager />
           </TabsContent>
 
           <TabsContent value="settings">
