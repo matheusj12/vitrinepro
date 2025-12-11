@@ -23,6 +23,9 @@ import CustomersManager from "@/components/dashboard/CustomersManager";
 import OrdersManager from "@/components/dashboard/OrdersManager";
 import CatalogExport from "@/components/dashboard/CatalogExport";
 import StockManager from "@/components/dashboard/StockManager";
+import PlansManager from "@/components/dashboard/PlansManager";
+import TrialBanner from "@/components/dashboard/TrialBanner";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -52,7 +55,8 @@ import {
   Ticket,
   UserCircle,
   FileDown,
-  Boxes
+  Boxes,
+  Crown
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -71,6 +75,9 @@ const Dashboard = () => {
   const [showQRCode, setShowQRCode] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Hook de assinatura para verificar trial
+  const { isTrialExpiring, isTrialExpired, daysRemaining } = useSubscription(tenantData?.tenant?.id || null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -240,6 +247,7 @@ const Dashboard = () => {
     { id: "themes", label: "Aparência", icon: Palette },
     { id: "qrcode", label: "QR Code", icon: QrCode },
     { id: "notifications", label: "Notificações", icon: Bell },
+    { id: "plans", label: "Planos", icon: Crown },
     { id: "settings", label: "Configurações", icon: Settings },
   ];
 
@@ -252,202 +260,214 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Onboarding Wizard */}
-      {showOnboarding && (
-        <OnboardingWizard
-          tenantId={tenant.id}
-          tenantName={tenant.company_name}
-          onComplete={handleOnboardingComplete}
-          onSkip={() => setShowOnboarding(false)}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Trial Banner */}
+      {(isTrialExpiring || isTrialExpired) && daysRemaining !== null && (
+        <TrialBanner
+          daysRemaining={daysRemaining}
+          isExpired={isTrialExpired}
+          onUpgradeClick={() => setActiveTab("plans")}
         />
       )}
 
-      {/* Sidebar */}
-      <motion.aside
-        initial={{ x: -280 }}
-        animate={{ x: sidebarOpen ? 0 : -280 }}
-        className="fixed left-0 top-0 bottom-0 w-[280px] bg-card border-r z-40 flex flex-col"
-      >
-        {/* Sidebar Header */}
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-sm truncate">{tenant.company_name}</h2>
-                <p className="text-xs text-muted-foreground truncate">@{tenant.slug}</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Command Palette Trigger */}
-        <div className="p-4 border-b">
-          <CommandPalette
-            onNavigate={setActiveTab}
-            onAction={handleCommandAction}
-            tenantSlug={tenant.slug}
+      <div className="flex flex-1">
+        {/* Onboarding Wizard */}
+        {showOnboarding && (
+          <OnboardingWizard
+            tenantId={tenant.id}
+            tenantName={tenant.company_name}
+            onComplete={handleOnboardingComplete}
+            onSkip={() => setShowOnboarding(false)}
           />
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1 ${activeTab === item.id
-                ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-              {activeTab === item.id && (
-                <ChevronRight className="h-4 w-4 ml-auto" />
-              )}
-            </button>
-          ))}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t space-y-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => window.open(storeUrl, '_blank')}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Ver Vitrine
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
-        </div>
-      </motion.aside>
-
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-[280px]' : ''}`}>
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b">
-          <div className="flex items-center justify-between px-4 lg:px-6 h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="font-bold text-lg">
-                  {navigationItems.find(item => item.id === activeTab)?.label || "Dashboard"}
-                </h1>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsDark(!isDark)}
-              >
-                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-              >
-                {copied ? <Copy className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                {copied ? "Copiado!" : "Copiar Link"}
-              </Button>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
-                onClick={() => window.open(storeUrl, '_blank')}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Ver Vitrine
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Stats Cards - Show on main tabs */}
-        {(activeTab === "products" || activeTab === "analytics") && (
-          <div className="px-4 lg:px-6 py-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {stats.map((stat, idx) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                >
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                          <stat.icon className="h-5 w-5 text-violet-600" />
-                        </div>
-                        {stat.change && (
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${stat.positive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'
-                            }`}>
-                            {stat.change}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-2xl font-bold">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
         )}
 
-        {/* Main Content Area */}
-        <main className="px-4 lg:px-6 pb-8">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === "products" && <ProductsManager tenantId={tenant.id} />}
-            {activeTab === "categories" && <CategoriesManager tenantId={tenant.id} />}
-            {activeTab === "banners" && <BannersManager tenantId={tenant.id} />}
-            {activeTab === "quotes" && <QuotesManager tenantId={tenant.id} />}
-            {activeTab === "orders" && <OrdersManager tenantId={tenant.id} />}
-            {activeTab === "customers" && <CustomersManager tenantId={tenant.id} />}
-            {activeTab === "coupons" && <CouponsManager tenantId={tenant.id} />}
-            {activeTab === "analytics" && <AnalyticsDashboard tenantId={tenant.id} />}
-            {activeTab === "stock" && <StockManager tenantId={tenant.id} />}
-            {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} />}
-            {activeTab === "themes" && <ThemesManager tenantId={tenant.id} />}
-            {activeTab === "qrcode" && <QRCodeGenerator storeUrl={storeUrl} storeName={tenant.company_name} />}
-            {activeTab === "notifications" && <NotificationsManager tenantId={tenant.id} />}
-            {activeTab === "settings" && <SettingsManager tenant={tenant} />}
-          </motion.div>
-        </main>
+        {/* Sidebar */}
+        <motion.aside
+          initial={{ x: -280 }}
+          animate={{ x: sidebarOpen ? 0 : -280 }}
+          className="fixed left-0 top-0 bottom-0 w-[280px] bg-card border-r z-40 flex flex-col"
+        >
+          {/* Sidebar Header */}
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-bold text-sm truncate">{tenant.company_name}</h2>
+                  <p className="text-xs text-muted-foreground truncate">@{tenant.slug}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Command Palette Trigger */}
+          <div className="p-4 border-b">
+            <CommandPalette
+              onNavigate={setActiveTab}
+              onAction={handleCommandAction}
+              tenantSlug={tenant.slug}
+            />
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-2">
+            {navigationItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1 ${activeTab === item.id
+                  ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+                {activeTab === item.id && (
+                  <ChevronRight className="h-4 w-4 ml-auto" />
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => window.open(storeUrl, '_blank')}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Ver Vitrine
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
+          </div>
+        </motion.aside>
+
+        {/* Main Content */}
+        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-[280px]' : ''}`}>
+          {/* Top Header */}
+          <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b">
+            <div className="flex items-center justify-between px-4 lg:px-6 h-16">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="font-bold text-lg">
+                    {navigationItems.find(item => item.id === activeTab)?.label || "Dashboard"}
+                  </h1>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsDark(!isDark)}
+                >
+                  {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                >
+                  {copied ? <Copy className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                  {copied ? "Copiado!" : "Copiar Link"}
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                  onClick={() => window.open(storeUrl, '_blank')}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Ver Vitrine
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          {/* Stats Cards - Show on main tabs */}
+          {(activeTab === "products" || activeTab === "analytics") && (
+            <div className="px-4 lg:px-6 py-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((stat, idx) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                            <stat.icon className="h-5 w-5 text-violet-600" />
+                          </div>
+                          {stat.change && (
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${stat.positive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'
+                              }`}>
+                              {stat.change}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-2xl font-bold">{stat.value}</div>
+                        <div className="text-xs text-muted-foreground">{stat.label}</div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Main Content Area */}
+          <main className="px-4 lg:px-6 pb-8">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === "products" && <ProductsManager tenantId={tenant.id} />}
+              {activeTab === "categories" && <CategoriesManager tenantId={tenant.id} />}
+              {activeTab === "banners" && <BannersManager tenantId={tenant.id} />}
+              {activeTab === "quotes" && <QuotesManager tenantId={tenant.id} />}
+              {activeTab === "orders" && <OrdersManager tenantId={tenant.id} />}
+              {activeTab === "customers" && <CustomersManager tenantId={tenant.id} />}
+              {activeTab === "coupons" && <CouponsManager tenantId={tenant.id} />}
+              {activeTab === "analytics" && <AnalyticsDashboard tenantId={tenant.id} />}
+              {activeTab === "stock" && <StockManager tenantId={tenant.id} />}
+              {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} />}
+              {activeTab === "themes" && <ThemesManager tenantId={tenant.id} />}
+              {activeTab === "qrcode" && <QRCodeGenerator storeUrl={storeUrl} storeName={tenant.company_name} />}
+              {activeTab === "notifications" && <NotificationsManager tenantId={tenant.id} />}
+              {activeTab === "plans" && <PlansManager tenantId={tenant.id} />}
+              {activeTab === "settings" && <SettingsManager tenant={tenant} />}
+            </motion.div>
+          </main>
+        </div>
       </div>
 
       {/* Mobile sidebar overlay */}
