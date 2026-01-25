@@ -91,10 +91,10 @@ export const PublicHeader = ({
     : undefined;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b glass transition-all duration-300">
-      <div className="container flex h-16 items-center justify-between px-4">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to={`/loja/${slug}`} className="flex items-center gap-2 group">
+        <Link to={`/loja/${slug}`} className="flex items-center gap-2 group outline-none">
           {logoUrl ? (
             <img
               src={logoUrl}
@@ -102,8 +102,8 @@ export const PublicHeader = ({
               className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
             />
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 font-bold text-white text-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 font-bold text-white text-xl">
                 {storeName.charAt(0).toUpperCase()}
               </div>
               <span className="font-heading font-bold text-xl hidden sm:inline tracking-tight text-foreground/90">
@@ -113,58 +113,69 @@ export const PublicHeader = ({
           )}
         </Link>
 
-        {/* Navigation Menu */}
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link to={`/loja/${slug}`}>
-                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
-                  Home
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            {categories.length > 0 && (
+        {/* Navigation Menu - Ajustado para ser mais visível */}
+        <div className="hidden md:flex items-center justify-center flex-1 px-8">
+          <NavigationMenu>
+            <NavigationMenuList className="gap-2">
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Produtos</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {categories.map((category) => (
-                      <li key={category.id}>
-                        <Link to={`/loja/${slug}/categoria/${category.slug}`}>
-                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">
-                              {category.name}
-                            </div>
-                          </NavigationMenuLink>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
+                <Link to={`/loja/${slug}`}>
+                  <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-full bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+                    Início
+                  </NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
-            )}
-          </NavigationMenuList>
-        </NavigationMenu>
+
+              {categories.length > 0 && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="rounded-full h-9 px-4 bg-transparent hover:bg-accent hover:text-accent-foreground">
+                    Produtos
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {categories.map((category) => (
+                        <li key={category.id}>
+                          <Link to={`/loja/${slug}/categoria/${category.slug}`}>
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none mb-1">
+                                {category.name}
+                              </div>
+                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
+                                Ver produtos da categoria {category.name}
+                              </p>
+                            </NavigationMenuLink>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
 
         {/* Actions (social + cart) */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Redes sociais: renderiza somente quando houver link (cliente) + ícone (super admin) */}
-          <SocialIcon icon={instagramIcon} label="Instagram" url={instagramUrl} />
-          <SocialIcon icon={facebookIcon} label="Facebook" url={facebookUrl} />
-          <SocialIcon icon={tiktokIcon} label="TikTok" url={tiktokUrl} />
-          <SocialIcon icon={youtubeIcon} label="YouTube" url={youtubeUrl} />
-          <SocialIcon icon={whatsappIcon} label="WhatsApp" url={whatsappBusinessUrl || whatsappQuickLink} />
-          <SocialIcon icon={pinterestIcon} label="Pinterest" url={pinterestUrl} />
-          <SocialIcon icon={twitterIcon} label="X / Twitter" url={twitterUrl} />
-          <SocialIcon icon={linkedinIcon} label="LinkedIn" url={linkedinUrl} />
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1 border-r pr-2 mr-2 border-border/50">
+            {/* Redes sociais com tooltip nativo básico para clareza */}
+            <SocialIcon icon={instagramIcon} label="Instagram" url={instagramUrl} />
+            <SocialIcon icon={facebookIcon} label="Facebook" url={facebookUrl} />
+            <SocialIcon icon={tiktokIcon} label="TikTok" url={tiktokUrl} />
+            <SocialIcon icon={youtubeIcon} label="YouTube" url={youtubeUrl} />
+            <SocialIcon icon={whatsappIcon} label="WhatsApp" url={whatsappBusinessUrl || whatsappQuickLink} />
+          </div>
 
-          {/* Cart */}
+          {/* Cart Button - Redesigned */}
           <Link to={`/loja/${slug}/carrinho`}>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Abrir carrinho">
-              <ShoppingCart className="h-5 w-5" />
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative rounded-full h-10 w-10 border-border/50 bg-background/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 group"
+              aria-label="Abrir carrinho"
+            >
+              <ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-110" />
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center ring-2 ring-background group-hover:bg-white group-hover:text-primary animate-in zoom-in-50">
                   {cartItemsCount}
                 </span>
               )}

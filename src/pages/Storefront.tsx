@@ -378,10 +378,10 @@ const Storefront = () => {
         slug={slug!}
       />
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <StorefrontBanner banners={banners} />
 
-        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 mt-12 transition-all">
           <StorefrontFilters
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -393,26 +393,61 @@ const Storefront = () => {
             debouncedSearchQuery={debouncedSearchQuery}
           />
 
-          <div>
-            {categories.length > 0 && !debouncedSearchQuery ? (
-              <div className="mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4">Categorias</h2>
-                <div className="flex gap-2 flex-wrap">
+          <div className="min-w-0">
+            {categories.length > 0 && !debouncedSearchQuery && (
+              <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-heading font-bold">Navegar por Categorias</h2>
+                </div>
+
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={() => setSelectedCategoryIds([])}
+                    className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.length === 0
+                      ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                      : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
+                      }`}
+                  >
+                    Todas
+                  </button>
                   {categories.map((category) => (
-                    <Button key={category.id} variant="outline" size="sm" className="text-xs sm:text-sm">
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        if (selectedCategoryIds.includes(category.id)) {
+                          setSelectedCategoryIds(prev => prev.filter(id => id !== category.id));
+                        } else {
+                          setSelectedCategoryIds(prev => [...prev, category.id]);
+                        }
+                      }}
+                      className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.includes(category.id)
+                        ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                        : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
+                        }`}
+                    >
                       {category.name}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
             <div>
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-center">Produtos</h2>
+              <div className="flex items-end justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-heading font-bold text-foreground">
+                    {debouncedSearchQuery ? `Resultados para "${debouncedSearchQuery}"` : "Produtos em Destaque"}
+                  </h2>
+                  <p className="text-muted-foreground mt-1">
+                    {displayedProducts.length} produtos encontrados
+                  </p>
+                </div>
+              </div>
+
               <StorefrontProductGrid
                 products={displayedProducts}
                 isLoading={isLoadingProducts}
-                gridClasses={productGridClasses}
+                gridClasses="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
                 onAddToCart={handleAddToCart}
               />
             </div>
@@ -421,23 +456,34 @@ const Storefront = () => {
       </main>
 
       {/* Rodapé discreto e minimalista — apenas na vitrine pública */}
-      <footer className="border-t border-border">
-        <div className="container mx-auto px-3 sm:px-4 py-6 text-center text-muted-foreground">
-          <div className="space-y-2">
-            <p className="text-xs sm:text-sm">Powered by Goti Soluções</p>
-            <p className="text-xs sm:text-sm">© 2026 — Todos os direitos reservados</p>
-            <p className="text-xs sm:text-sm">
-              Quer seu catálogo para WhatsApp? Entre em contato: 62984-810290
-            </p>
-            <div className="pt-2">
+      <footer className="border-t border-border mt-20">
+        <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+          <div className="flex flex-col items-center gap-6">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-violet-600/20 flex items-center justify-center">
+              <span className="font-bold text-primary text-xl">
+                {tenant?.company_name?.charAt(0) || 'L'}
+              </span>
+            </div>
+
+            <div className="space-y-4 max-w-md mx-auto">
+              <p className="text-sm">
+                {tenant?.company_name} - Todos os direitos reservados.
+              </p>
+
+              <div className="flex items-center justify-center gap-6 pt-2">
+                {/* Links sociais poderiam vir aqui */}
+              </div>
+            </div>
+
+            <div className="pt-8 border-t w-full max-w-xs mx-auto">
+              <p className="text-xs text-muted-foreground mb-3">Powered by</p>
               <a
                 href="https://www.gotisolucoes.com.br/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                aria-label="Criar meu catálogo agora"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-background hover:bg-accent transition-colors text-xs font-medium"
               >
-                Criar meu catálogo agora →
+                Goti Soluções 🚀
               </a>
             </div>
           </div>
@@ -458,7 +504,7 @@ const Storefront = () => {
 
       {/* Sticky Cart Bar (Mobile/Desktop) */}
       <StickyCartBar slug={slug} />
-    </div>
+    </div >
   );
 };
 
