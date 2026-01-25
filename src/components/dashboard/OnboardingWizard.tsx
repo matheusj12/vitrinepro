@@ -26,6 +26,7 @@ import confetti from "canvas-confetti";
 interface OnboardingWizardProps {
     tenantId: string;
     tenantName: string;
+    tenantSlug: string;
     onComplete: () => void;
     onSkip: () => void;
 }
@@ -38,7 +39,7 @@ const steps = [
     { id: 5, title: "Compartilhar", icon: Share2, description: "Divulgue sua loja" },
 ];
 
-export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: OnboardingWizardProps) => {
+export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete, onSkip }: OnboardingWizardProps) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -463,7 +464,7 @@ export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: O
                                 <Sparkles className="h-12 w-12 mx-auto text-amber-500 mb-4" />
                                 <p className="font-medium mb-2">Link da sua vitrine:</p>
                                 <code className="bg-secondary px-4 py-2 rounded-lg text-sm block break-all">
-                                    agencia062.com/loja/{storeName.toLowerCase().replace(/\s+/g, '-') || 'sua-loja'}
+                                    agencia062.com/loja/{tenantSlug}
                                 </code>
                             </CardContent>
                         </Card>
@@ -473,8 +474,7 @@ export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: O
                             variant="outline"
                             className="w-full h-12"
                             onClick={() => {
-                                const storeSlug = storeName.toLowerCase().replace(/\s+/g, '-') || 'sua-loja';
-                                const link = `https://agencia062.com/loja/${storeSlug}`;
+                                const link = `https://agencia062.com/loja/${tenantSlug}`;
                                 navigator.clipboard.writeText(link).then(() => {
                                     toast.success("Link copiado para a área de transferência!");
                                 }).catch(() => {

@@ -276,6 +276,7 @@ const Dashboard = () => {
           <OnboardingWizard
             tenantId={tenant.id}
             tenantName={tenant.company_name}
+            tenantSlug={tenant.slug}
             onComplete={handleOnboardingComplete}
             onSkip={() => setShowOnboarding(false)}
           />
