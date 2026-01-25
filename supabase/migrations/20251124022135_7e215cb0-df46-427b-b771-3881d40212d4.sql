@@ -1,4 +1,4 @@
--- Tornar matheusjuliodeoliveira@gmail.com super admin
+-- Tornar matheusjuliodeoliveira@gmail.com super admin (se existir)
 DO $$
 DECLARE
   v_user_id uuid;
@@ -10,8 +10,10 @@ BEGIN
   FROM auth.users 
   WHERE email = 'matheusjuliodeoliveira@gmail.com';
   
+  -- Se não existe, apenas avisar e retornar (não falhar)
   IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Usuário com email matheusjuliodeoliveira@gmail.com não encontrado';
+    RAISE NOTICE 'Usuário matheusjuliodeoliveira@gmail.com não encontrado. Super admin será configurado quando o usuário for criado.';
+    RETURN;
   END IF;
   
   -- Buscar tenant do usuário

@@ -1,4 +1,4 @@
-project_id = "rtljfxgxpgzabbsmqwno"
+project_id = "prjhknveicdfykkglxta"
 
 [functions.check-expiring-subscriptions]
 verify_jwt = false
