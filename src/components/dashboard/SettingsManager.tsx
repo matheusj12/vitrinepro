@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Clock, MapPin, Store } from "lucide-react";
 import { toast } from "sonner";
 
 interface SettingsManagerProps {
@@ -16,6 +18,16 @@ interface SettingsManagerProps {
 }
 
 const DEFAULT_WHATSAPP_ICON = "/images/whatsapp/whta.png";
+
+const DAYS = [
+  { id: 'mon', label: 'Segunda-feira' },
+  { id: 'tue', label: 'Terça-feira' },
+  { id: 'wed', label: 'Quarta-feira' },
+  { id: 'thu', label: 'Quinta-feira' },
+  { id: 'fri', label: 'Sexta-feira' },
+  { id: 'sat', label: 'Sábado' },
+  { id: 'sun', label: 'Domingo' },
+];
 
 const SettingsManager = ({ tenant }: SettingsManagerProps) => {
   const queryClient = useQueryClient();
@@ -41,6 +53,26 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
   const [pinterestUrl, setPinterestUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
+
+  // Sobre a Loja & Horários
+  const [history, setHistory] = useState("");
+
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
+
+  const [autoCloseEnabled, setAutoCloseEnabled] = useState(false);
+  const [closingMessage, setClosingMessage] = useState("No momento estamos fechados. Seu pedido será processado no próximo dia útil.");
+  const [schedule, setSchedule] = useState<any>({
+    mon: { active: true, open: "08:00", close: "18:00" },
+    tue: { active: true, open: "08:00", close: "18:00" },
+    wed: { active: true, open: "08:00", close: "18:00" },
+    thu: { active: true, open: "08:00", close: "18:00" },
+    fri: { active: true, open: "08:00", close: "18:00" },
+    sat: { active: true, open: "08:00", close: "12:00" },
+    sun: { active: false, open: "00:00", close: "00:00" },
+  });
 
   const { data: settings } = useQuery({
     queryKey: ["store-settings", tenant.id],
@@ -69,7 +101,25 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
         setLogoUrl(branding.logo_url || "");
         setAboutText(branding.about_text || "");
         setWhatsIconUrl((data as any)?.floating_button_icon_url || "");
+
+        // Sobre e Horários
+        const about = (data as any).about || {};
+        setHistory(about.history || "");
+
+        const loc = about.location || {};
+        setAddress(loc.address || "");
+        setCity(loc.city || "");
+        setState(loc.state || "");
+        setZip(loc.zip || "");
+
+        const hours = about.opening_hours || {};
+        setAutoCloseEnabled(hours.enabled || false);
+        setClosingMessage(hours.closing_message || "No momento estamos fechados. Seu pedido será processado no próximo dia útil.");
+        if (hours.schedule) {
+          setSchedule(hours.schedule);
+        }
       }
+
 
       return data as StoreSettings | null;
     },
@@ -217,6 +267,41 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
     },
   });
 
+  const updateAboutMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const currentAbout = (settings as any)?.about || {};
+      const about = {
+        ...currentAbout,
+        ...data
+      };
+
+      if (settings) {
+        const { error } = await supabase
+          .from("store_settings")
+          .update({ about })
+          .eq("tenant_id", tenant.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("store_settings").insert({
+          tenant_id: tenant.id,
+          about,
+          // Garante que outros campos não fiquem nulos se for o primeiro insert
+          contact: {},
+          branding: {},
+          storefront: {}
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-settings", tenant.id] });
+      toast.success("Informações atualizadas com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    },
+  });
+
   const uploadWhatsIcon = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -328,6 +413,24 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
     updateBrandingMutation.mutate({ logoUrl, aboutText });
   };
 
+  const handleAboutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateAboutMutation.mutate({
+      history,
+      location: {
+        address,
+        city,
+        state,
+        zip
+      },
+      opening_hours: {
+        enabled: autoCloseEnabled,
+        closing_message: closingMessage,
+        schedule
+      }
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -335,9 +438,10 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="contact">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="contact">Contato</TabsTrigger>
             <TabsTrigger value="branding">Identidade</TabsTrigger>
+            <TabsTrigger value="about">Sobre & Horários</TabsTrigger>
             <TabsTrigger value="domain">Domínio</TabsTrigger>
           </TabsList>
 
@@ -473,6 +577,171 @@ const SettingsManager = ({ tenant }: SettingsManagerProps) => {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="about" className="space-y-6">
+            <form onSubmit={handleAboutSubmit} className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Store className="h-4 w-4" />
+                    História da Loja
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>Conte um pouco sobre sua loja</Label>
+                    <Textarea
+                      placeholder="Nossa loja nasceu em 2010 com a missão de..."
+                      className="min-h-[120px]"
+                      value={history}
+                      onChange={(e) => setHistory(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Essa informação aparecerá na página "Sobre a Loja" da sua vitrine.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MapPin className="h-4 w-4" />
+                    Localização Física
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Endereço Completo</Label>
+                    <Input
+                      placeholder="Rua das Flores, 123 - Centro"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Cidade</Label>
+                      <Input
+                        placeholder="São Paulo"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Estado (UF)</Label>
+                      <Input
+                        placeholder="SP"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        maxLength={2}
+                      />
+                    </div>
+                    <div>
+                      <Label>CEP</Label>
+                      <Input
+                        placeholder="00000-000"
+                        value={zip}
+                        onChange={(e) => setZip(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock className="h-4 w-4" />
+                      Horários de Funcionamento
+                    </CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="auto-close" className="text-sm font-normal cursor-pointer">
+                        Fechamento Automático da Vitrine
+                      </Label>
+                      <Switch
+                        id="auto-close"
+                        checked={autoCloseEnabled}
+                        onCheckedChange={setAutoCloseEnabled}
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {autoCloseEnabled && (
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-4 rounded-lg animate-in fade-in">
+                      <Label className="text-amber-800 dark:text-amber-400">Mensagem quando fechado</Label>
+                      <Input
+                        className="mt-2 border-amber-200 dark:border-amber-800"
+                        value={closingMessage}
+                        onChange={(e) => setClosingMessage(e.target.value)}
+                      />
+                      <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+                        Essa mensagem aparecerá para os clientes quando tentarem acessar fora do horário.
+                        O carrinho de compras será desativado.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-[1fr,100px,100px] gap-4 font-medium text-sm text-muted-foreground mb-2 px-2">
+                      <div>Dia da Semana</div>
+                      <div>Abertura</div>
+                      <div>Fechamento</div>
+                    </div>
+                    {DAYS.map((day) => (
+                      <div key={day.id} className="grid grid-cols-[1fr,100px,100px] gap-4 items-center p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`day-${day.id}`}
+                            checked={schedule[day.id]?.active}
+                            onCheckedChange={(checked) => {
+                              setSchedule((prev: any) => ({
+                                ...prev,
+                                [day.id]: { ...prev[day.id], active: !!checked }
+                              }));
+                            }}
+                          />
+                          <Label htmlFor={`day-${day.id}`} className="cursor-pointer font-medium">
+                            {day.label}
+                          </Label>
+                        </div>
+                        <Input
+                          type="time"
+                          disabled={!schedule[day.id]?.active}
+                          value={schedule[day.id]?.open}
+                          onChange={(e) => {
+                            setSchedule((prev: any) => ({
+                              ...prev,
+                              [day.id]: { ...prev[day.id], open: e.target.value }
+                            }));
+                          }}
+                          className="h-9"
+                        />
+                        <Input
+                          type="time"
+                          disabled={!schedule[day.id]?.active}
+                          value={schedule[day.id]?.close}
+                          onChange={(e) => {
+                            setSchedule((prev: any) => ({
+                              ...prev,
+                              [day.id]: { ...prev[day.id], close: e.target.value }
+                            }));
+                          }}
+                          className="h-9"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={updateAboutMutation.isPending}>
+                      {updateAboutMutation.isPending ? "Salvando..." : "Salvar Configurações"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
           </TabsContent>
 
           <TabsContent value="domain" className="space-y-4">

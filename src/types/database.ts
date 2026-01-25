@@ -110,6 +110,27 @@ export interface StoreSettings {
   branding: any;
   storefront: any;
   contact: any;
+  about?: {
+    history?: string;
+    location?: {
+      address: string;
+      city: string;
+      state: string;
+      zip: string;
+      maps_link?: string;
+    };
+    opening_hours?: {
+      enabled: boolean;
+      closing_message?: string;
+      schedule: {
+        [key: string]: {
+          active: boolean;
+          open: string;
+          close: string;
+        };
+      };
+    };
+  };
   theme_id: string | null;
   created_at: string;
   updated_at: string;

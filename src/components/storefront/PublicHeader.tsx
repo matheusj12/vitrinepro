@@ -125,31 +125,13 @@ export const PublicHeader = ({
                 </Link>
               </NavigationMenuItem>
 
-              {categories.length > 0 && (
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="rounded-full h-9 px-4 bg-transparent hover:bg-accent hover:text-accent-foreground">
-                    Produtos
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {categories.map((category) => (
-                        <li key={category.id}>
-                          <Link to={`/loja/${slug}/categoria/${category.slug}`}>
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                              <div className="text-sm font-medium leading-none mb-1">
-                                {category.name}
-                              </div>
-                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-                                Ver produtos da categoria {category.name}
-                              </p>
-                            </NavigationMenuLink>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              )}
+              <NavigationMenuItem>
+                <Link to={`/loja/${slug}/sobre`}>
+                  <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-full bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+                    Sobre a Loja
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>

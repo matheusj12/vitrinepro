@@ -12,30 +12,19 @@ import Storefront from "./pages/Storefront";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import ResetPassword from "./pages/ResetPassword";
+import AboutStore from "./pages/AboutStore";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/superadmin" element={<SuperAdmin />} />
+// ... (dentro do componente App)
           <Route path="/loja/:slug" element={<Storefront />} />
+          <Route path="/loja/:slug/sobre" element={<AboutStore />} />
           <Route path="/loja/:slug/carrinho" element={<Cart />} />
           <Route path="/loja/:slug/checkout" element={<Checkout />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+{/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */ }
+<Route path="*" element={<NotFound />} />
+        </Routes >
+      </BrowserRouter >
+    </TooltipProvider >
+  </QueryClientProvider >
 );
 
 export default App;
