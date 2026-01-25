@@ -60,20 +60,59 @@ export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: O
 
     const handleNext = async () => {
         if (currentStep === 1) {
-            // Save store name
-            if (storeName.trim()) {
-                setIsLoading(true);
-                try {
+            // Save store name and logo
+            setIsLoading(true);
+            try {
+                // Update store name
+                if (storeName.trim()) {
                     await supabase
                         .from("tenants")
                         .update({ company_name: storeName })
                         .eq("id", tenantId);
-                    toast.success("Nome da loja salvo!");
-                } catch (error) {
-                    console.error(error);
                 }
-                setIsLoading(false);
+
+                // Upload logo if selected
+                if (storeLogo) {
+                    const fileExt = storeLogo.name.split('.').pop();
+                    const fileName = `${tenantId}/logo.${fileExt}`;
+
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('store-logos')
+                        .upload(fileName, storeLogo, {
+                            cacheControl: '3600',
+                            upsert: true
+                        });
+
+                    if (uploadError) {
+                        console.error('Erro ao fazer upload do logo:', uploadError);
+                        toast.error('Erro ao enviar logo, mas continuando...');
+                    } else {
+                        // Get public URL
+                        const { data: urlData } = supabase.storage
+                            .from('store-logos')
+                            .getPublicUrl(fileName);
+
+                        // Update store_settings with logo URL
+                        await supabase
+                            .from("store_settings")
+                            .upsert({
+                                tenant_id: tenantId,
+                                branding: {
+                                    store_title: storeName,
+                                    logo_url: urlData.publicUrl
+                                }
+                            }, { onConflict: 'tenant_id' });
+
+                        toast.success("Logo enviado com sucesso!");
+                    }
+                }
+
+                toast.success("Nome da loja salvo!");
+            } catch (error) {
+                console.error(error);
+                toast.error("Erro ao salvar dados da loja");
             }
+            setIsLoading(false);
         }
 
         if (currentStep === 2) {
@@ -194,11 +233,65 @@ export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: O
 
                             <div>
                                 <Label>Logo da Loja (opcional)</Label>
-                                <div className="mt-1.5 border-2 border-dashed rounded-xl p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                    <p className="text-sm text-muted-foreground">
-                                        Arraste ou clique para enviar
-                                    </p>
+                                <div
+                                    className="mt-1.5 border-2 border-dashed rounded-xl p-8 text-center hover:border-primary transition-colors cursor-pointer relative"
+                                    onClick={() => document.getElementById('logo-upload')?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const file = e.dataTransfer.files[0];
+                                        if (file && file.type.startsWith('image/')) {
+                                            setStoreLogo(file);
+                                        }
+                                    }}
+                                >
+                                    <input
+                                        id="logo-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setStoreLogo(file);
+                                            }
+                                        }}
+                                    />
+                                    {storeLogo ? (
+                                        <div className="flex flex-col items-center">
+                                            <img
+                                                src={URL.createObjectURL(storeLogo)}
+                                                alt="Preview do logo"
+                                                className="w-20 h-20 object-contain rounded-lg mb-2"
+                                            />
+                                            <p className="text-sm text-green-600 font-medium">
+                                                ✓ {storeLogo.name}
+                                            </p>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setStoreLogo(null);
+                                                }}
+                                                className="text-xs text-red-500 mt-1 hover:underline"
+                                            >
+                                                Remover
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                            <p className="text-sm text-muted-foreground">
+                                                Arraste ou clique para enviar
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                PNG, JPG até 5MB
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
