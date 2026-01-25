@@ -462,22 +462,29 @@ export const OnboardingWizard = ({ tenantId, tenantName, onComplete, onSkip }: O
                             <CardContent className="p-6 text-center">
                                 <Sparkles className="h-12 w-12 mx-auto text-amber-500 mb-4" />
                                 <p className="font-medium mb-2">Link da sua vitrine:</p>
-                                <code className="bg-secondary px-4 py-2 rounded-lg text-sm">
-                                    vitrinepro.com.br/loja/{storeName.toLowerCase().replace(/\s+/g, '-') || 'sua-loja'}
+                                <code className="bg-secondary px-4 py-2 rounded-lg text-sm block break-all">
+                                    agencia062.com/loja/{storeName.toLowerCase().replace(/\s+/g, '-') || 'sua-loja'}
                                 </code>
                             </CardContent>
                         </Card>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button variant="outline" className="h-12">
-                                <MessageCircle className="mr-2 h-4 w-4" />
-                                WhatsApp
-                            </Button>
-                            <Button variant="outline" className="h-12">
-                                <Share2 className="mr-2 h-4 w-4" />
-                                Copiar Link
-                            </Button>
-                        </div>
+
+                        <Button
+                            variant="outline"
+                            className="w-full h-12"
+                            onClick={() => {
+                                const storeSlug = storeName.toLowerCase().replace(/\s+/g, '-') || 'sua-loja';
+                                const link = `https://agencia062.com/loja/${storeSlug}`;
+                                navigator.clipboard.writeText(link).then(() => {
+                                    toast.success("Link copiado para a área de transferência!");
+                                }).catch(() => {
+                                    toast.error("Não foi possível copiar o link");
+                                });
+                            }}
+                        >
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Copiar Link
+                        </Button>
                     </motion.div>
                 );
 
