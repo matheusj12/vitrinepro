@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Minus, Plus, Trash2, ArrowLeft, Ticket, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowLeft, Ticket, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { StoreSettings, Category } from "@/types/database";
 import { FloatingWhatsAppButton } from "@/components/storefront/FloatingWhatsAppButton";
@@ -193,7 +193,8 @@ ${obsVal}
 Aguardando confirmação de pagamento/entrega.`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${storeWhatsapp}&text=${encodedMessage}`;
+    const cleanPhone = storeWhatsapp.replace(/\D/g, "");
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
     // Increment coupon usage (fire and forget)
     if (appliedCoupon) {
