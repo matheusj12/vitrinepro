@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,18 @@ const steps = [
 export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete, onSkip }: OnboardingWizardProps) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [currentSlug, setCurrentSlug] = useState(tenantSlug);
+
+    const slugify = (text: string) => {
+        return text
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, "")
+            .replace(/-{2,}/g, "-");
+    };
 
     // Step 1: Store info
     // Se o nome for o padrão gerado pelo sistema (ex: "Loja de Fulano"), iniciamos vazio para forçar o usuário a configurar.
@@ -66,12 +79,33 @@ export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete,
             // Save store name and logo
             setIsLoading(true);
             try {
-                // Update store name
+                // Update store name and Generate SLUG
                 if (storeName.trim()) {
-                    await supabase
+                    let newSlug = slugify(storeName);
+
+                    // Verifica se o slug já existe (exceto para o próprio tenant)
+                    const { data: existing } = await supabase
                         .from("tenants")
-                        .update({ company_name: storeName })
+                        .select("id")
+                        .eq("slug", newSlug)
+                        .neq("id", tenantId)
+                        .single();
+
+                    // Se já existe, adiciona números aleatórios
+                    if (existing) {
+                        newSlug = `${newSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+                    }
+
+                    const { error } = await supabase
+                        .from("tenants")
+                        .update({
+                            company_name: storeName,
+                            slug: newSlug
+                        })
                         .eq("id", tenantId);
+
+                    if (error) throw error;
+                    setCurrentSlug(newSlug); // Atualiza slug para os próximos passos
                 }
 
                 // Upload logo if selected
@@ -192,7 +226,9 @@ export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete,
                 origin: { y: 0.6 }
             });
             toast.success("🎉 Parabéns! Sua loja está pronta!");
-            onComplete();
+
+            // Força reload ao finalizar para atualizar todo o contexto do app (URL, hooks, etc)
+            window.location.reload();
         }
     };
 
@@ -466,7 +502,7 @@ export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete,
                                 <Sparkles className="h-12 w-12 mx-auto text-amber-500 mb-4" />
                                 <p className="font-medium mb-2">Link da sua vitrine:</p>
                                 <code className="bg-secondary px-4 py-2 rounded-lg text-sm block break-all">
-                                    agencia062.com/loja/{tenantSlug}
+                                    agencia062.com/loja/{currentSlug}
                                 </code>
                             </CardContent>
                         </Card>
@@ -476,7 +512,7 @@ export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete,
                             variant="outline"
                             className="w-full h-12"
                             onClick={() => {
-                                const link = `https://agencia062.com/loja/${tenantSlug}`;
+                                const link = `https://agencia062.com/loja/${currentSlug}`;
                                 navigator.clipboard.writeText(link).then(() => {
                                     toast.success("Link copiado para a área de transferência!");
                                 }).catch(() => {
