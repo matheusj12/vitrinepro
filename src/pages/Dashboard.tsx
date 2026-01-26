@@ -351,7 +351,12 @@ const Dashboard = () => {
             tenantName={tenant.company_name}
             tenantSlug={tenant.slug}
             onComplete={handleOnboardingComplete}
-            onSkip={() => setShowOnboarding(false)}
+            onSkip={() => {
+              if (tenantData?.tenant) {
+                localStorage.setItem(`onboarding-${tenantData.tenant.id}`, 'skipped');
+              }
+              setShowOnboarding(false);
+            }}
           />
         )}
 
