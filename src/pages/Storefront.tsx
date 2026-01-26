@@ -329,16 +329,16 @@ const Storefront = () => {
   };
   const productGridClasses = `grid grid-cols-${gridColumns.mobile} sm:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop} gap-4 sm:gap-6`;
 
-  // Links do cliente
+  // Links do cliente (com trim para evitar espaços vazios ativando ícones)
   const contact = (storeSettings?.contact as any) || {};
-  const instagramUrl = contact.instagram_url as string | undefined;
-  const facebookUrl = contact.facebook_url as string | undefined;
-  const tiktokUrl = contact.tiktok_url as string | undefined;
-  const youtubeUrl = contact.youtube_url as string | undefined;
-  const whatsappBusinessUrl = contact.whatsapp_business_url as string | undefined;
-  const pinterestUrl = contact.pinterest_url as string | undefined;
-  const twitterUrl = contact.twitter_url as string | undefined;
-  const linkedinUrl = contact.linkedin_url as string | undefined;
+  const instagramUrl = contact.instagram_url?.trim() || undefined;
+  const facebookUrl = contact.facebook_url?.trim() || undefined;
+  const tiktokUrl = contact.tiktok_url?.trim() || undefined;
+  const youtubeUrl = contact.youtube_url?.trim() || undefined;
+  const whatsappBusinessUrl = contact.whatsapp_business_url?.trim() || undefined;
+  const pinterestUrl = contact.pinterest_url?.trim() || undefined;
+  const twitterUrl = contact.twitter_url?.trim() || undefined;
+  const linkedinUrl = contact.linkedin_url?.trim() || undefined;
 
   // Ícones globais (super admin)
   const instagramIcon = (globalIcons as any)?.instagram;
