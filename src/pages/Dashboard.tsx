@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,9 +73,17 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("products");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
+  // const [showQRCode, setShowQRCode] = useState(false); // Unused
   const [isDark, setIsDark] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Dashboard Stats Realtime State
+  const [statsData, setStatsData] = useState({
+    visits: 0,
+    quotes: 0,
+    conversion: "0%",
+    activeProducts: 0
+  });
 
   // Hook de assinatura para verificar trial
   const { isTrialExpiring, isTrialExpired, daysRemaining } = useSubscription(tenantData?.tenant?.id || null);
@@ -112,6 +121,67 @@ const Dashboard = () => {
     }
   }, [isDark]);
 
+  // Fetch Stats Realtime Hooks
+  useEffect(() => {
+    const tenantId = tenantData?.tenant?.id;
+    if (!tenantId) return;
+
+    const fetchStats = async () => {
+      // 1. Produtos Ativos
+      try {
+        const { count: productsCount } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenantId)
+          .eq("active", true);
+
+        // 2. Orçamentos (Quotes)
+        let quotesCount = 0;
+        try {
+          const { count } = await supabase
+            .from("quotes")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId);
+          quotesCount = count || 0;
+        } catch (e) { }
+
+        // 3. Simulação de Visitas (Placeholder)
+        let visitsCount = 0;
+        try {
+          const { count } = await supabase
+            .from("page_views")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId);
+          visitsCount = count || 0;
+        } catch (e) { }
+
+        const conversionRate = visitsCount > 0 ? ((quotesCount / visitsCount) * 100).toFixed(1) + "%" : "0%";
+
+        setStatsData({
+          visits: visitsCount,
+          quotes: quotesCount,
+          conversion: conversionRate,
+          activeProducts: productsCount || 0
+        });
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      }
+    };
+
+    fetchStats();
+
+    // Opcional: Realtime subscription
+    const channel = supabase
+      .channel('dashboard-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenantId}` }, () => fetchStats())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantData?.tenant?.id]);
+
+
   const handleLogout = async () => {
     console.log("Logging out user:", user?.id);
     const { error } = await supabase.auth.signOut();
@@ -144,7 +214,6 @@ const Dashboard = () => {
     switch (action) {
       case "new-product":
         setActiveTab("products");
-        // Could trigger new product modal here
         break;
       case "new-category":
         setActiveTab("categories");
@@ -162,6 +231,10 @@ const Dashboard = () => {
         break;
     }
   };
+
+  // --------------------------------------------------------------------------
+  // CONDITIONAL RENDERS (Loading / Error) - MUST BE AFTER ALL HOOKS
+  // --------------------------------------------------------------------------
 
   // Estado de loading (auth, tenant loading ou criação de tenant)
   if (authLoading || tenantLoading || isCreatingTenant) {
@@ -230,6 +303,7 @@ const Dashboard = () => {
     );
   }
 
+  // Renderização Principal (após carregar tudo)
   const { tenant } = tenantData;
   const storeUrl = `/loja/${tenant.slug}`;
 
@@ -250,73 +324,6 @@ const Dashboard = () => {
     { id: "plans", label: "Planos", icon: Crown },
     { id: "settings", label: "Configurações", icon: Settings },
   ];
-
-  // Dashboard Stats Realtime
-  const [statsData, setStatsData] = useState({
-    visits: 0,
-    quotes: 0,
-    conversion: "0%",
-    activeProducts: 0
-  });
-
-  useEffect(() => {
-    if (!tenant?.id) return;
-
-    const fetchStats = async () => {
-      // 1. Produtos Ativos
-      const { count: productsCount } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true })
-        .eq("tenant_id", tenant.id)
-        .eq("active", true);
-
-      // 2. Orçamentos (Quotes) - se tabela existir, assumindo quotes
-      // Verificaremos se existe tabela quotes, se der erro ignora
-      let quotesCount = 0;
-      try {
-        const { count } = await supabase
-          .from("quotes")
-          .select("*", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id);
-        quotesCount = count || 0;
-      } catch (e) {
-        // Tabela pode não existir ainda
-      }
-
-      // 3. Simulação de Visitas (Placeholder até ter Analytics real)
-      // Se tiver tabela page_views, usamos. Senão 0.
-      let visitsCount = 0;
-      try {
-        const { count } = await supabase
-          .from("page_views") // Nome hipotético
-          .select("*", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id);
-        visitsCount = count || 0;
-      } catch (e) { }
-
-      // Cálculo de conversão simples
-      const conversionRate = visitsCount > 0 ? ((quotesCount / visitsCount) * 100).toFixed(1) + "%" : "0%";
-
-      setStatsData({
-        visits: visitsCount,
-        quotes: quotesCount,
-        conversion: conversionRate,
-        activeProducts: productsCount || 0
-      });
-    };
-
-    fetchStats();
-
-    // Opcional: Realtime subscription para atualizar contadores
-    const channel = supabase
-      .channel('dashboard-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenant.id}` }, () => fetchStats())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [tenant?.id]);
 
   const stats = [
     { label: "Visitas Hoje", value: statsData.visits.toString(), icon: Eye, change: "", positive: true },
