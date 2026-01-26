@@ -1,5 +1,14 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import {
+  ShoppingCart,
+  Instagram,
+  Facebook,
+  Youtube,
+  Linkedin,
+  Twitter,
+  MessageCircle,
+  Video
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -30,7 +39,7 @@ interface PublicHeaderProps {
   pinterestUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
-  // Ícones enviados pelo Super Admin (URLs públicas)
+  // Ícones enviados pelo Super Admin (URLs públicas - opcional agora)
   instagramIcon?: string;
   facebookIcon?: string;
   tiktokIcon?: string;
@@ -70,8 +79,18 @@ export const PublicHeader = ({
   const { getTotalItems } = useCart();
   const cartItemsCount = getTotalItems();
 
-  const SocialIcon = ({ icon, label, url }: { icon?: string; label: string; url?: string }) => {
-    if (!url || !icon) return null;
+  const SocialIcon = ({
+    icon,
+    label,
+    url,
+    FallbackIcon
+  }: {
+    icon?: string;
+    label: string;
+    url?: string;
+    FallbackIcon?: any;
+  }) => {
+    if (!url) return null;
     return (
       <a
         href={url}
@@ -79,9 +98,15 @@ export const PublicHeader = ({
         rel="noopener noreferrer"
         title={label}
         aria-label={label}
-        className="p-2 rounded-md hover:bg-accent transition-colors"
+        className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-primary"
       >
-        <img src={icon} alt={label} className="h-5 w-5" />
+        {icon ? (
+          <img src={icon} alt={label} className="h-5 w-5" />
+        ) : FallbackIcon ? (
+          <FallbackIcon className="h-5 w-5" />
+        ) : (
+          <span className="text-xs font-bold">{label[0]}</span>
+        )}
       </a>
     );
   };
@@ -139,15 +164,17 @@ export const PublicHeader = ({
         {/* Actions (social + cart) */}
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-1 border-r pr-2 mr-2 border-border/50">
-            {/* Redes sociais com tooltip nativo básico para clareza */}
-            <SocialIcon icon={instagramIcon} label="Instagram" url={instagramUrl} />
-            <SocialIcon icon={facebookIcon} label="Facebook" url={facebookUrl} />
-            <SocialIcon icon={tiktokIcon} label="TikTok" url={tiktokUrl} />
-            <SocialIcon icon={youtubeIcon} label="YouTube" url={youtubeUrl} />
-            <SocialIcon icon={whatsappIcon} label="WhatsApp" url={whatsappBusinessUrl || whatsappQuickLink} />
+            {/* Redes sociais com tooltip e fallback */}
+            <SocialIcon icon={instagramIcon} label="Instagram" url={instagramUrl} FallbackIcon={Instagram} />
+            <SocialIcon icon={facebookIcon} label="Facebook" url={facebookUrl} FallbackIcon={Facebook} />
+            <SocialIcon icon={tiktokIcon} label="TikTok" url={tiktokUrl} FallbackIcon={Video} />
+            <SocialIcon icon={youtubeIcon} label="YouTube" url={youtubeUrl} FallbackIcon={Youtube} />
+            <SocialIcon icon={whatsappIcon} label="WhatsApp" url={whatsappBusinessUrl || whatsappQuickLink} FallbackIcon={MessageCircle} />
+            <SocialIcon icon={twitterIcon} label="Twitter/X" url={twitterUrl} FallbackIcon={Twitter} />
+            <SocialIcon icon={linkedinIcon} label="LinkedIn" url={linkedinUrl} FallbackIcon={Linkedin} />
           </div>
 
-          {/* Cart Button - Redesigned */}
+          {/* Cart Button */}
           <Link to={`/loja/${slug}/carrinho`}>
             <Button
               variant="outline"

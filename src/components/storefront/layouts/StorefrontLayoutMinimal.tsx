@@ -32,11 +32,26 @@ export const StorefrontLayoutMinimal = ({
     // Links e ícones
     const contact = (storeSettings?.contact as any) || {};
     const instagramUrl = contact.instagram_url?.trim() || undefined;
+    const facebookUrl = contact.facebook_url?.trim() || undefined;
+    const tiktokUrl = contact.tiktok_url?.trim() || undefined;
+    const youtubeUrl = contact.youtube_url?.trim() || undefined;
+    const whatsappBusinessUrl = contact.whatsapp_business_url?.trim() || undefined;
+    const pinterestUrl = contact.pinterest_url?.trim() || undefined;
+    const twitterUrl = contact.twitter_url?.trim() || undefined;
+    const linkedinUrl = contact.linkedin_url?.trim() || undefined;
+
+    // Ícones globais
+    const instagramIcon = (globalIcons as any)?.instagram;
+    const facebookIcon = (globalIcons as any)?.facebook;
+    const tiktokIcon = (globalIcons as any)?.tiktok;
+    const youtubeIcon = (globalIcons as any)?.youtube;
+    const whatsappIcon = (globalIcons as any)?.whatsapp;
+    const pinterestIcon = (globalIcons as any)?.pinterest;
+    const twitterIcon = (globalIcons as any)?.twitter;
+    const linkedinIcon = (globalIcons as any)?.linkedin;
+
     const logoUrl = (storeSettings as any)?.branding?.logo_url;
     const floatingIconUrl = (storeSettings as any)?.floating_button_icon_url as string | undefined;
-
-    // Lógica de ícones (simplificada para o Minimal)
-    // ...
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center">
@@ -45,8 +60,25 @@ export const StorefrontLayoutMinimal = ({
                 storeName={tenant?.company_name || "Loja"}
                 logoUrl={logoUrl}
                 whatsappNumber={(storeSettings as any)?.contact?.whatsapp_number}
+
                 instagramUrl={instagramUrl}
-                // No minimal, menos ícones no topo
+                facebookUrl={facebookUrl}
+                tiktokUrl={tiktokUrl}
+                youtubeUrl={youtubeUrl}
+                whatsappBusinessUrl={whatsappBusinessUrl}
+                pinterestUrl={pinterestUrl}
+                twitterUrl={twitterUrl}
+                linkedinUrl={linkedinUrl}
+
+                instagramIcon={instagramIcon}
+                facebookIcon={facebookIcon}
+                tiktokIcon={tiktokIcon}
+                youtubeIcon={youtubeIcon}
+                whatsappIcon={whatsappIcon}
+                pinterestIcon={pinterestIcon}
+                twitterIcon={twitterIcon}
+                linkedinIcon={linkedinIcon}
+
                 categories={categories || []}
                 slug={tenant?.slug!}
             />
