@@ -25,6 +25,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -110,6 +120,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -160,7 +171,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     },
   });
 
-  // Filtros em memória (para UX rápida)
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -174,7 +184,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
         throw new Error("Adicione pelo menos uma imagem ao produto");
       }
 
-      // Limite simples: 50 produtos para todos (ajuste conforme necessidade)
       if (products.length >= 50) {
         throw new Error("Limite de produtos atingido. Upgrade seu plano.");
       }
@@ -255,7 +264,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Duplicação Profissional (Direta no Banco)
   const duplicateMutation = useMutation({
     mutationFn: async (product: Product) => {
       const newName = `${product.name} (Cópia)`;
@@ -271,7 +279,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
         price: product.price,
         min_quantity: product.min_quantity,
         category_id: product.category_id,
-        active: true, // Garante que apareça ativo
+        active: true,
         image_url: product.image_url,
         images: product.images,
         video_url: product.video_url
@@ -360,7 +368,33 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     <div className="space-y-6 animate-in fade-in duration-500">
       <UpgradeAlert open={showUpgradeAlert} onOpenChange={setShowUpgradeAlert} />
 
-      {/* Header */}
+      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O produto "{products.find(p => p.id === productToDelete)?.name}" será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault(); // Evita fechamento prematuro se quiser loading
+                if (productToDelete) {
+                  deleteMutation.mutate(productToDelete, {
+                    onSuccess: () => setProductToDelete(null)
+                  });
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Produtos</h2>
@@ -471,7 +505,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       ) : (
         <Card className="border-none shadow-sm bg-transparent">
           <CardContent className="p-0">
-            {/* Toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-card p-4 rounded-xl border shadow-sm">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -496,7 +529,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
               </div>
             </div>
 
-            {/* Tabela Profissional */}
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
               <Table>
                 <TableHeader>
@@ -574,7 +606,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => { if (confirm("Tem certeza?")) deleteMutation.mutate(product.id) }}
+                                onClick={() => setProductToDelete(product.id)}
                                 className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" /> Excluir
