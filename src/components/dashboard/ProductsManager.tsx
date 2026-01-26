@@ -43,7 +43,7 @@ import {
   MoreHorizontal, Search, Filter, ArrowUpDown, Pencil, Trash2, Tag, Image as ImageIcon
 } from "lucide-react";
 import { generateProductDescription } from "@/services/ai-product-service";
-import { UpgradeAlert } from "./UpgradeAlert";
+// Removed UpgradeAlert to prevent crash
 
 const DEFAULT_PRODUCT_IMAGE = "/images/default-product-512.png";
 const MAX_IMAGES = 5;
@@ -117,7 +117,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
+  // Removed showUpgradeAlert state
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
@@ -185,7 +185,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       }
 
       if (products.length >= 50) {
-        throw new Error("Limite de produtos atingido. Upgrade seu plano.");
+        throw new Error("Limite atingido (50 produtos).");
       }
 
       const baseSlug = slugify(data.name);
@@ -214,11 +214,10 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
         if (error) throw error;
       } catch (err: any) {
         if (err.message && (err.message.includes("images") || err.message.includes("schema"))) {
-          // Fallback para schema antigo
           const { images, ...legacyPayload } = payload;
           const { error: retryError } = await supabase.from("products").insert(legacyPayload);
           if (retryError) throw retryError;
-          toast.info("Salvo em modo de compatibilidade (1ª imagem apenas)");
+          toast.info("Salvo em modo de compatibilidade");
         } else {
           throw err;
         }
@@ -319,7 +318,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
           const { images, ...legacyPayload } = payload;
           const { error: retryError } = await supabase.from("products").insert(legacyPayload);
           if (retryError) throw retryError;
-          toast.info("Duplicado em modo de compatibilidade");
+          toast.info("Copy: Modo compatibilidade");
         } else {
           throw err;
         }
@@ -327,9 +326,9 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
-      toast.success("Produto duplicado com sucesso!");
+      toast.success("Produto duplicado!");
     },
-    onError: (err: any) => toast.error("Erro ao duplicar: " + err.message),
+    onError: (err: any) => toast.error("Erro: " + err.message),
   });
 
   const toggleActiveMutation = useMutation({
@@ -341,7 +340,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
       toast.success("Status atualizado.");
     },
-    onError: (err: any) => toast.error("Erro ao alterar status"),
+    onError: (err: any) => toast.error("Erro status"),
   });
 
   const resetForm = () => {
@@ -405,7 +404,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <UpgradeAlert open={showUpgradeAlert} onOpenChange={setShowUpgradeAlert} />
 
       <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
         <AlertDialogContent>
