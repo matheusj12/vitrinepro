@@ -82,7 +82,7 @@ export const useTheme = (tenantId?: string) => {
       return themeData as Theme;
     },
     enabled: !!tenantId,
-    staleTime: 1000 * 60 * 5, // Cache por 5 min
+    staleTime: 0, // Sempre buscar o tema mais recente para refletir mudanças imediatas
   });
 
   // Engine de Aplicação do Tema
