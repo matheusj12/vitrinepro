@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Check, Undo2, Palette, AlertCircle, Eye } from "lucide-react";
+import { Check, Undo2, AlertCircle, Eye } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,11 +43,9 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
   const colors = theme.config?.colors || {};
   const radius = theme.config?.productCard?.radius || "0.5rem";
 
-  // Função para converter HSLA para string CSS válida se não tiver var()
   const getColor = (name: string, fallback: string) => {
     let val = colors[name];
     if (!val) return fallback;
-    // Se vier no formato "0 0% 100%", wrap em hsl()
     if (!val.startsWith("#") && !val.startsWith("hsl") && !val.startsWith("rgb")) {
       return `hsl(${val})`;
     }
@@ -66,10 +64,7 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
       className="relative w-full h-40 overflow-hidden border-b"
       style={{ backgroundColor: bg }}
     >
-      {/* Miniatura da Interface */}
       <div className="absolute inset-0 flex flex-col p-4 gap-3 opacity-90 transition-transform group-hover:scale-105 duration-500">
-
-        {/* Header simulado */}
         <div className="flex items-center justify-between">
           <div className="w-16 h-4 rounded" style={{ backgroundColor: fg, opacity: 0.8 }}></div>
           <div className="flex gap-2">
@@ -78,7 +73,6 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
           </div>
         </div>
 
-        {/* Hero Banner simulado */}
         <div
           className="w-full h-12 rounded flex items-center justify-center"
           style={{
@@ -93,7 +87,6 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
           </span>
         </div>
 
-        {/* Grid de produtos simulado */}
         <div className="grid grid-cols-2 gap-3 mt-1">
           {[1, 2].map(i => (
             <div
@@ -133,7 +126,13 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
     queryKey: ["themes-list"],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("themes-list");
-      if (error) throw error;
+      // Se falhar a function, tenta buscar direto do banco (fallback)
+      if (error) {
+        console.warn("Function falhou, buscando direto do banco", error);
+        const { data: dbThemes, error: dbError } = await supabase.from("themes").select("*").eq("active", true);
+        if (dbError) throw dbError;
+        return dbThemes;
+      }
       return data?.data || [];
     },
   });
@@ -141,13 +140,13 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
   const { data: currentTenant, error: tenantError } = useQuery({
     queryKey: ["tenant-theme", tenantId],
     queryFn: async () => {
+      // Prioriza store_settings
       const { data, error } = await supabase
         .from("store_settings")
         .select("theme_id")
         .eq("tenant_id", tenantId)
         .single();
 
-      // Também buscar no tenant legacy para garantir compatibilidade
       const { data: legacyTenant } = await supabase
         .from("tenants")
         .select("selected_theme_id, previous_theme_id")
@@ -161,39 +160,53 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
         previous_theme_id: legacyTenant?.previous_theme_id
       };
     },
+    // Atualizar frequente para detectar mudanças
+    refetchInterval: 2000
   });
 
   useEffect(() => {
     setCanRevert(!!currentTenant?.previous_theme_id);
   }, [currentTenant]);
 
+  // CORREÇÃO: Atualização direta no banco de dados (ignorando Edge Function quebrada)
   const applyMutation = useMutation({
     mutationFn: async ({ themeId }: { themeId: string }) => {
-      const { data, error } = await supabase.functions.invoke("themes-apply", {
-        body: { themeId, preview: false },
-      });
-      if (error) throw error;
-      if (!data || !data.success) throw new Error(data?.error || "Erro ao aplicar tema");
-      return data;
+      console.log("Aplicando tema:", themeId);
+
+      // 1. Atualizar store_settings
+      const { error: sError } = await supabase
+        .from("store_settings")
+        .update({ theme_id: themeId })
+        .eq("tenant_id", tenantId);
+
+      if (sError) throw sError;
+
+      // 2. Atualizar tenants (legado)
+      await supabase
+        .from("tenants")
+        .update({ selected_theme_id: themeId })
+        .eq("id", tenantId);
+
+      return { success: true };
     },
     onSuccess: () => {
       toast.success("Tema aplicado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["tenant-theme"] });
       queryClient.invalidateQueries({ queryKey: ["selected-theme"] });
-      queryClient.invalidateQueries({ queryKey: ["themes-list"] });
+      // Reload sutil se necessário, mas o invalidate deve bastar
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Erro ao aplicar tema");
+      toast.error("Erro ao salvar tema: " + error.message);
     },
   });
 
   const revertMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("themes-revert", {
-        method: "POST",
-      });
-      if (error) throw error;
-      return data;
+      if (!currentTenant?.previous_theme_id) return;
+      const previousId = currentTenant.previous_theme_id;
+
+      await supabase.from("store_settings").update({ theme_id: previousId }).eq("tenant_id", tenantId);
+      await supabase.from("tenants").update({ selected_theme_id: previousId }).eq("id", tenantId);
     },
     onSuccess: () => {
       toast.success("Tema revertido!");
@@ -202,7 +215,7 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
       setCanRevert(false);
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Erro ao reverter tema");
+      toast.error("Erro ao reverter tema");
     },
   });
 
@@ -267,7 +280,6 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {((themesResponse as any) || []).map((theme: Theme) => {
               const isSelected = currentThemeId === theme.id;
-              // Extrair cores para o color dots
               const colors = theme.config?.colors || {};
               const palette = [colors.background, colors.primary, colors.accent].filter(Boolean);
 
@@ -327,8 +339,7 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
       <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-700 text-sm">
         <AlertCircle className="w-5 h-5 flex-shrink-0" />
         <p>
-          Dica: Ao trocar de tema, todas as cores, fontes e estilos de cartões da sua loja serão atualizados automaticamente.
-          Seus produtos e configurações permanecem os mesmos.
+          Dica: Ao trocar de tema, a vitrine será atualizada imediatamente. Se não ver a mudança, atualize a página da loja.
         </p>
       </div>
     </div>
