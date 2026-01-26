@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Upload, X, Plus, Link as LinkIcon, Video, Copy, Sparkles, Loader2 } from "lucide-react";
 import { generateProductDescription } from "@/services/ai-product-service";
+import { UpgradeAlert } from "./UpgradeAlert";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/default-product-512.png";
 const MAX_IMAGES = 5;
@@ -57,14 +59,6 @@ const generateUniqueSlug = async (tenantId: string, baseSlug: string, excludePro
   return `${baseSlug}-${n}`;
 };
 
-// Normaliza valores como: 2.500 / 25.000 / 2.50 / 2,50 / 2.500,99
-// Regras:
-// - Se tiver '.' e ',', assume '.' como milhar e ',' como decimal -> remove '.' e troca ',' por '.'
-// - Se tiver apenas ',', troca ',' por '.'
-// - Se tiver apenas '.', decide por heurística:
-//     * Se padrão de milhar (grupos de 3) OU o sufixo tem 3 dígitos => remover '.' (milhar)
-//     * Caso contrário, trata como decimal
-// - Sem separadores: parse direto
 const normalizePriceToNumber = (raw: string): number | null => {
   if (raw == null) return null;
   let s = String(raw).trim().replace(/\s/g, "");
@@ -74,20 +68,16 @@ const normalizePriceToNumber = (raw: string): number | null => {
   const hasDot = s.includes(".");
 
   if (hasComma && hasDot) {
-    // 1.234,56
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (hasComma) {
-    // 2,50
     s = s.replace(",", ".");
   } else if (hasDot) {
-    // Só ponto: decidir se é milhar ou decimal
     const lastDot = s.lastIndexOf(".");
     const decimals = s.length - lastDot - 1;
     const isThousandPattern = /^\d{1,3}(\.\d{3})+$/.test(s);
     if (isThousandPattern || decimals === 3) {
-      // 2.500 ou 25.000 -> milhar
       s = s.replace(/\./g, "");
-    } // Else: decimal (2.50)
+    }
   }
 
   const num = Number(s);
@@ -101,6 +91,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showUpgradeAlert, setShowUpgradeAlert] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -149,17 +140,31 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     },
   });
 
+  const handleMutationError = (error: any) => {
+    console.error("Mutation error:", error);
+    const msg = error?.message || "Erro ao processar solicitação";
+    if (msg.includes("Limite") || msg.includes("limit") || msg.includes("Upgrade") || msg.includes("plano")) {
+      setShowUpgradeAlert(true);
+    } else {
+      toast.error(msg);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       if (!Array.isArray(data.images) || data.images.length === 0) {
         throw new Error("Adicione pelo menos uma imagem ao produto");
       }
 
-      // 1. Verificar limite de produtos antes de criar
       const { data: limitCheck, error: limitError } = await supabase.functions.invoke("check-product-limit");
 
-      if (limitError || !limitCheck.can_create) {
-        throw new Error(limitCheck.message || "Limite de produtos atingido pelo plano atual. Faça upgrade para continuar.");
+      if (limitError) {
+        console.error("Erro check-product-limit:", limitError);
+        throw new Error("Erro ao verificar limites do plano.");
+      }
+
+      if (!limitCheck?.can_create) {
+        throw new Error(limitCheck?.message || "Limite de produtos atingido pelo plano atual.");
       }
 
       const baseSlug = slugify(data.name);
@@ -167,7 +172,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const images: string[] = data.images.slice(0, MAX_IMAGES);
       const firstImage = images[0] || null;
 
-      // Normalizar preço
       const priceNumber = data.price ? normalizePriceToNumber(data.price) : null;
 
       const { error } = await supabase.from("products").insert({
@@ -191,9 +195,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       toast.success("Produto criado!");
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Erro ao criar produto");
-    },
+    onError: handleMutationError,
   });
 
   const updateMutation = useMutation({
@@ -207,7 +209,6 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const images: string[] = data.images.slice(0, MAX_IMAGES);
       const firstImage = images[0] || null;
 
-      // Normalizar preço
       const priceNumber = data.price ? normalizePriceToNumber(data.price) : null;
 
       const { error } = await supabase
@@ -257,11 +258,10 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Usuário não autenticado.");
 
-      // 2. Verificar limite de produtos antes de clonar
       const { data: limitCheck, error: limitError } = await supabase.functions.invoke("check-product-limit");
 
       if (limitError || !limitCheck.can_create) {
-        throw new Error(limitCheck.message || "Limite de produtos atingido pelo plano atual. Faça upgrade para continuar.");
+        throw new Error(limitCheck?.message || "Limite de produtos atingido.");
       }
 
       const response = await fetch(
@@ -284,11 +284,9 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
-      toast.success(`Produto "${data.newProduct.name}" duplicado com sucesso!`);
+      toast.success(`Produto "${data.newProduct.name}" duplicado!`);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Erro ao duplicar produto");
-    },
+    onError: handleMutationError,
   });
 
   const resetForm = () => {
@@ -418,14 +416,27 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   };
 
   const handleDuplicate = (productId: string) => {
+    // Bloqueio preventivo no frontend (assumindo plano grátis se não tiver info de subscription)
+    if (products.length >= 10) {
+      setShowUpgradeAlert(true);
+      return;
+    }
     cloneMutation.mutate(productId);
   };
 
   return (
     <div className="space-y-4">
+      <UpgradeAlert open={showUpgradeAlert} onOpenChange={setShowUpgradeAlert} />
+
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Produtos ({products.length})</h2>
-        <Button onClick={() => setIsCreating(!isCreating)}>
+        <Button onClick={() => {
+          if (!isCreating && products.length >= 10) {
+            setShowUpgradeAlert(true);
+            return;
+          }
+          setIsCreating(!isCreating);
+        }}>
           {isCreating ? "Cancelar" : "Novo Produto"}
         </Button>
       </div>

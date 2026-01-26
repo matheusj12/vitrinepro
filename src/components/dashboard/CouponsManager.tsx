@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +61,17 @@ const CouponsManager = ({ tenantId }: CouponsManagerProps) => {
     const [maxUses, setMaxUses] = useState("");
     const [validUntil, setValidUntil] = useState("");
 
+    const resetForm = () => {
+        setCode("");
+        setType("percentage");
+        setValue("");
+        setMinPurchase("");
+        setMaxDiscount("");
+        setMaxUses("");
+        setValidUntil("");
+        setEditingCoupon(null);
+    };
+
     // Fetch coupons
     const { data: coupons, isLoading } = useQuery({
         queryKey: ["coupons", tenantId],
@@ -98,11 +110,12 @@ const CouponsManager = ({ tenantId }: CouponsManagerProps) => {
             setIsDialogOpen(false);
         },
         onError: (error: any) => {
-            if (error.message?.includes("unique")) {
-                toast.error("Já existe um cupom com esse código");
-            } else {
-                toast.error("Erro ao salvar cupom");
-            }
+            console.error("Erro completo:", error);
+            const errorMsg = error.message || error.details || error.hint || JSON.stringify(error);
+            toast.error("Falha ao salvar", {
+                description: `Erro: ${errorMsg}. Verifique os dados ou contate o suporte.`,
+                duration: 8000
+            });
         },
     });
 
@@ -135,17 +148,6 @@ const CouponsManager = ({ tenantId }: CouponsManagerProps) => {
         },
     });
 
-    const resetForm = () => {
-        setCode("");
-        setType("percentage");
-        setValue("");
-        setMinPurchase("");
-        setMaxDiscount("");
-        setMaxUses("");
-        setValidUntil("");
-        setEditingCoupon(null);
-    };
-
     const handleEdit = (coupon: Coupon) => {
         setEditingCoupon(coupon);
         setCode(coupon.code);
@@ -170,16 +172,40 @@ const CouponsManager = ({ tenantId }: CouponsManagerProps) => {
             return;
         }
 
-        saveMutation.mutate({
+        const safeParseFloat = (val: string) => {
+            const num = parseFloat(val);
+            return isNaN(num) ? 0 : num;
+        };
+
+        const safeParseNullable = (val: string) => {
+            if (!val) return null;
+            const num = parseFloat(val);
+            return isNaN(num) ? null : num;
+        };
+
+        const safeParseIntNullable = (val: string) => {
+            if (!val) return null;
+            const num = parseInt(val);
+            return isNaN(num) ? null : num;
+        };
+
+        const couponPayload: any = {
             code: code.toUpperCase().replace(/\s/g, ""),
             type,
-            value: parseFloat(value),
-            min_purchase: minPurchase ? parseFloat(minPurchase) : 0,
-            max_discount: maxDiscount ? parseFloat(maxDiscount) : null,
-            max_uses: maxUses ? parseInt(maxUses) : null,
-            valid_until: validUntil ? new Date(validUntil).toISOString() : null,
+            value: safeParseFloat(value),
+            min_purchase: safeParseFloat(minPurchase),
+            max_discount: safeParseNullable(maxDiscount),
+            max_uses: safeParseIntNullable(maxUses),
             active: true,
-        });
+        };
+
+        if (validUntil) {
+            couponPayload.valid_until = new Date(validUntil).toISOString();
+        } else {
+            couponPayload.valid_until = null;
+        }
+
+        saveMutation.mutate(couponPayload);
     };
 
     const handleCopyCode = (code: string) => {
@@ -444,21 +470,17 @@ const CouponsManager = ({ tenantId }: CouponsManagerProps) => {
                                                         </Button>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <Badge
-                                                            variant={
-                                                                coupon.type === "percentage"
-                                                                    ? "default"
-                                                                    : "secondary"
-                                                            }
-                                                        >
-                                                            {coupon.type === "percentage" ? (
-                                                                <Percent className="h-3 w-3 mr-1" />
-                                                            ) : (
-                                                                <DollarSign className="h-3 w-3 mr-1" />
-                                                            )}
-                                                            {coupon.type === "percentage"
-                                                                ? `${coupon.value}% OFF`
-                                                                : `R$ ${coupon.value.toFixed(2)} OFF`}
+                                                        <Badge variant={coupon.type === "percentage" ? "default" : "secondary"}>
+                                                            <span className="flex items-center gap-1">
+                                                                {coupon.type === "percentage" ? (
+                                                                    <Percent className="h-3 w-3" />
+                                                                ) : (
+                                                                    <DollarSign className="h-3 w-3" />
+                                                                )}
+                                                                {coupon.type === "percentage"
+                                                                    ? `${coupon.value}% OFF`
+                                                                    : `R$ ${coupon.value.toFixed(2)} OFF`}
+                                                            </span>
                                                         </Badge>
                                                         {coupon.min_purchase > 0 && (
                                                             <span>
