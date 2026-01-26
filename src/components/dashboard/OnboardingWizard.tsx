@@ -44,7 +44,9 @@ export const OnboardingWizard = ({ tenantId, tenantName, tenantSlug, onComplete,
     const [isLoading, setIsLoading] = useState(false);
 
     // Step 1: Store info
-    const [storeName, setStoreName] = useState(tenantName || "");
+    // Se o nome for o padrão gerado pelo sistema (ex: "Loja de Fulano"), iniciamos vazio para forçar o usuário a configurar.
+    const isDefaultName = tenantName?.startsWith("Loja de ") || tenantName === "Minha Loja";
+    const [storeName, setStoreName] = useState(isDefaultName ? "" : (tenantName || ""));
     const [storeLogo, setStoreLogo] = useState<File | null>(null);
 
     // Step 2: First product
