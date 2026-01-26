@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -8,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Minus, Plus, Trash2, ArrowLeft, Ticket, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { StoreSettings, Category } from "@/types/database";
 import { FloatingWhatsAppButton } from "@/components/storefront/FloatingWhatsAppButton";
 import { PublicHeader } from "@/components/storefront/PublicHeader";
+import { Separator } from "@/components/ui/separator";
 
 const Cart = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -25,6 +27,12 @@ const Cart = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerWhatsapp, setCustomerWhatsapp] = useState("");
   const [observations, setObservations] = useState("");
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["store-settings", tenant?.id],
@@ -42,20 +50,6 @@ const Cart = () => {
     enabled: !!tenant?.id,
   });
 
-  // Links globais (Super Admin)
-  const { data: globalSocial } = useQuery({
-    queryKey: ["system-settings-social"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("system_settings")
-        .select("social")
-        .limit(1)
-        .maybeSingle();
-      if (error) return {};
-      return (data?.social as Record<string, string>) || {};
-    },
-  });
-
   const { data: categories = [] } = useQuery({
     queryKey: ["storefront-categories", tenant?.id],
     queryFn: async () => {
@@ -71,6 +65,79 @@ const Cart = () => {
     },
     enabled: !!tenant?.id,
   });
+
+  // Calculate Totals
+  const subtotal = items.reduce((acc, item) => acc + (item.product.price || 0) * item.quantity, 0);
+
+  const discountAmount = appliedCoupon
+    ? (appliedCoupon.type === "percentage"
+      ? (subtotal * (appliedCoupon.value / 100))
+      : appliedCoupon.value)
+    : 0;
+
+  // Apply limits
+  let finalDiscount = discountAmount;
+  if (appliedCoupon && appliedCoupon.max_discount && finalDiscount > appliedCoupon.max_discount) {
+    finalDiscount = appliedCoupon.max_discount;
+  }
+  finalDiscount = Math.min(finalDiscount, subtotal); // Cannot be more than subtotal
+
+  const total = Math.max(0, subtotal - finalDiscount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsValidatingCoupon(true);
+    setCouponError("");
+    setAppliedCoupon(null);
+
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("tenant_id", tenant?.id)
+        .eq("code", couponCode.toUpperCase().trim())
+        .eq("active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        setCouponError("Cupom inválido ou não encontrado.");
+        return;
+      }
+
+      // Validations
+      const now = new Date();
+      if (data.valid_until && new Date(data.valid_until) < now) {
+        setCouponError("Este cupom expirou.");
+        return;
+      }
+
+      if (data.max_uses && data.used_count >= data.max_uses) {
+        setCouponError("Limite de uso deste cupom atingido.");
+        return;
+      }
+
+      if (data.min_purchase && subtotal < data.min_purchase) {
+        setCouponError(`Compra mínima de R$ ${data.min_purchase.toFixed(2)} para este cupom.`);
+        return;
+      }
+
+      setAppliedCoupon(data);
+      toast.success("Cupom aplicado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      setCouponError("Erro ao validar cupom.");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    toast.info("Cupom removido.");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +162,7 @@ const Cart = () => {
     const listaProdutos = items
       .map(
         (item) =>
-          `- ${item.product.name} (Qtd: ${item.quantity})`
+          `- ${item.product.name} (Qtd: ${item.quantity}) | R$ ${(item.product.price * item.quantity).toFixed(2)}`
       )
       .join("\n");
 
@@ -103,41 +170,42 @@ const Cart = () => {
     const emailVal = customerEmail || "Não informado";
     const obsVal = observations || "Nenhuma";
 
-    // Links globais
-    const instagramLink = (globalSocial as any)?.instagram || "-";
-    const facebookLink = (globalSocial as any)?.facebook || "-";
-    const tikTokLink = (globalSocial as any)?.tiktok || "-";
+    const discountText = appliedCoupon ? `\n🎁 *Cupom:* ${appliedCoupon.code}\n💰 *Desconto:* -R$ ${finalDiscount.toFixed(2)}` : "";
 
     const message =
-`🚀 *Orçamento enviado com sucesso!*
+      `🚀 *Novo Pedido - VitrinePro*
+--------------------------------
+👤 *Cliente:* ${customerName}
+📞 *WhatsApp:* ${customerWhatsapp}
+📧 *Email:* ${emailVal}
 
-${customerName}, recebemos seu pedido e estamos preparando uma oferta especial para você 👇
-
-🛒 *Produtos selecionados:*  
+🛒 *RESUMO DO PEDIDO:*
 ${listaProdutos}
 
-📱 *Seus dados:*  
-WhatsApp: ${customerWhatsapp}  
-Email: ${emailVal}
-
-💭 *Observação:*  
+💵 *Subtotal:* R$ ${subtotal.toFixed(2)}${discountText}
+✅ *TOTAL A PAGAR:* R$ ${total.toFixed(2)}
+--------------------------------
+💭 *Observações:*
 ${obsVal}
 
-🔗 *Link da loja:* ${lojaLink}
+🔗 Link da loja: ${lojaLink}
 
-📣 *Siga a gente nas redes sociais:*  
-Instagram: ${instagramLink}  
-Facebook: ${facebookLink}  
-TikTok: ${tikTokLink}
-
-Em alguns instantes enviaremos seu valor final.  
-Se preferir agilizar, envie *"Quero fechar"* por aqui! 😉`;
+Aguardando confirmação de pagamento/entrega.`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${storeWhatsapp}&text=${encodedMessage}`;
-    
+
+    // Increment coupon usage (fire and forget)
+    if (appliedCoupon) {
+      try {
+        await supabase.from("coupons").update({ used_count: appliedCoupon.used_count + 1 }).eq("id", appliedCoupon.id);
+      } catch (err) {
+        console.error("Erro ao incrementar uso do cupom", err);
+      }
+    }
+
     window.open(whatsappUrl, "_blank");
-    toast.info("Abrindo WhatsApp com seu orçamento...");
+    toast.success("Pedido enviado para o WhatsApp!");
     clearCart();
 
     setTimeout(() => {
@@ -164,12 +232,11 @@ Se preferir agilizar, envie *"Quero fechar"* por aqui! 😉`;
   const floatingIconUrl = (settings as any)?.floating_button_icon_url as string | undefined;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50/50">
       <PublicHeader
         storeName={tenant?.company_name || "Loja"}
         logoUrl={(settings as any)?.branding?.logo_url}
         whatsappNumber={(settings as any)?.contact?.whatsapp_number}
-        // Redes sociais agora vêm do Super Admin no header via Storefront (Cart não precisa mostrá-las no topo)
         instagramUrl={undefined}
         facebookUrl={undefined}
         tiktokUrl={undefined}
@@ -182,40 +249,54 @@ Se preferir agilizar, envie *"Quero fechar"* por aqui! 😉`;
         slug={slug!}
       />
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button variant="ghost" className="mb-6" onClick={() => navigate(`/loja/${slug}`)}>
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <Button variant="ghost" className="mb-6 hover:bg-transparent pl-0" onClick={() => navigate(`/loja/${slug}`)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para a loja
         </Button>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-xl font-bold mb-4">Produtos</h2>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Coluna da Esquerda: Produtos */}
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Seu Carrinho</h2>
             <div className="space-y-4">
               {items.map((item) => (
-                <Card key={item.product.id}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold">{item.product.name}</h3>
-                        {item.product.price && <p className="text-sm text-muted-foreground">R$ {item.product.price.toFixed(2)}</p>}
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeItem(item.product.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                <Card key={item.product.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex gap-4 items-center">
+                    <div className="h-20 w-20 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
+                      {item.product.image_url ? (
+                        <img src={item.product.image_url} alt={item.product.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">Sem img</div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        disabled={item.quantity <= item.product.min_quantity}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="w-12 text-center">{item.quantity}</span>
-                      <Button variant="outline" size="sm" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">{item.product.name}</h3>
+                          <p className="text-sm text-gray-500">{item.product.sku}</p>
+                        </div>
+                        <p className="font-bold text-lg">R$ {(item.product.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            disabled={item.quantity <= item.product.min_quantity}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => removeItem(item.product.id)}>
+                          <Trash2 className="w-4 h-4 mr-1" /> Remover
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -223,30 +304,95 @@ Se preferir agilizar, envie *"Quero fechar"* por aqui! 😉`;
             </div>
           </div>
 
-          <div>
-            <h2 className="text-xl font-bold mb-4">Seus Dados</h2>
-            <Card>
-              <CardContent className="pt-6">
+          {/* Coluna da Direita: Resumo e Dados */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Resumo do Pedido</h2>
+
+            <Card className="border-none shadow-md">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Valores</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>R$ {subtotal.toFixed(2)}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span className="flex items-center gap-1"><Ticket className="w-3 h-3" /> Desconto ({appliedCoupon.code})</span>
+                    <span>- R$ {finalDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>R$ {total.toFixed(2)}</span>
+                </div>
+
+                {/* Área de Cupom */}
+                <div className="pt-4">
+                  <Label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block">Cupom de Desconto</Label>
+                  {!appliedCoupon ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Código"
+                        className="uppercase"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                      />
+                      <Button onClick={handleApplyCoupon} disabled={isValidatingCoupon || !couponCode}>
+                        {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-md p-3 flex justify-between items-center text-green-700 text-sm">
+                      <span className="font-medium flex items-center gap-2">
+                        <Ticket className="w-4 h-4" /> {appliedCoupon.code} aplicado
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-green-700 hover:text-green-900" onClick={handleRemoveCoupon}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg">Finalizar Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label>Nome *</Label>
-                    <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+                    <Label>Nome Completo *</Label>
+                    <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required placeholder="Seu nome" />
                   </div>
                   <div>
                     <Label>WhatsApp *</Label>
-                    <Input value={customerWhatsapp} onChange={(e) => setCustomerWhatsapp(e.target.value)} placeholder="5511999999999" required />
+                    <Input value={customerWhatsapp} onChange={(e) => setCustomerWhatsapp(e.target.value)} placeholder="DDD + Número" required />
+                  </div>
+                  <div>
+                    <Label>Email (Opcional)</Label>
+                    <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="seu@email.com" />
                   </div>
                   <div>
                     <Label>Observações</Label>
-                    <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Alguma informação adicional?" />
+                    <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Endereço de entrega, tamanho, cor..." />
                   </div>
-                  <Button type="submit" className="w-full">
-                    Enviar Orçamento via WhatsApp
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg font-bold shadow-lg shadow-green-600/20">
+                    Enviar Pedido no WhatsApp
                   </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Ao enviar, você será redirecionado para o WhatsApp da loja para finalizar o pagamento e combinar a entrega.
+                  </p>
                 </form>
               </CardContent>
             </Card>
