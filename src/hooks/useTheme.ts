@@ -1,12 +1,29 @@
+
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// Interface alinhada com o banco de dados
+interface ThemeConfig {
+  colors?: Record<string, string>;
+  productCard?: {
+    radius?: string;
+    shadow?: string;
+    border?: string;
+    hoverScale?: number;
+    hoverGlow?: boolean;
+  };
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+  variables?: Record<string, string>; // Legado ou extras
+}
+
 interface Theme {
   id: string;
   name: string;
-  colors: Record<string, string>;
-  variables?: Record<string, string>;
+  config: ThemeConfig;
 }
 
 export const useTheme = (tenantId?: string) => {
@@ -16,121 +33,97 @@ export const useTheme = (tenantId?: string) => {
       if (!tenantId) return null;
 
       // Buscar tema selecionado do tenant
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("selected_theme_id")
-        .eq("id", tenantId)
+      const { data: storeSettings, error: storeError } = await supabase
+        .from("store_settings")
+        .select("theme_id")
+        .eq("tenant_id", tenantId)
         .single();
 
-      // Se tenant não tiver tema, buscar Free Classic como padrão
-      const themeId = tenant?.selected_theme_id || null;
-      
+      let themeId = storeSettings?.theme_id;
+
+      // Se não achar em store_settings, tenta fallback em tenants (legado) ou padrão
       if (!themeId) {
-        // Buscar tema padrão Free Classic
-        const { data: defaultTheme, error: defaultError } = await supabase
+        const { data: tenant } = await supabase
+          .from("tenants")
+          .select("selected_theme_id") // Campo legado se existir, ou null
+          .eq("id", tenantId)
+          .maybeSingle(); // maybeSingle evita erro se não existir
+
+        themeId = (tenant as any)?.selected_theme_id;
+      }
+
+      if (!themeId) {
+        // Fallback: Buscar tema padrão 'free-classic'
+        const { data: defaultTheme } = await supabase
           .from("themes")
           .select("*")
           .eq("slug", "free-classic")
-          .single();
-
-        if (defaultError) {
-          console.error("Erro ao buscar tema padrão:", defaultError);
-          return null;
-        }
+          .maybeSingle();
         return defaultTheme as Theme;
       }
 
-      // Buscar dados do tema selecionado
+      // Buscar theme data
       const { data: themeData, error } = await supabase
         .from("themes")
         .select("*")
         .eq("id", themeId)
         .single();
 
-      if (error) {
-        console.error("Erro ao buscar tema:", error);
-        // Fallback para Free Classic
-        const { data: fallbackTheme } = await supabase
+      if (error || !themeData) {
+        // Fallback final
+        const { data: fallback } = await supabase
           .from("themes")
           .select("*")
           .eq("slug", "free-classic")
-          .single();
-        return fallbackTheme as Theme;
+          .maybeSingle();
+        return fallback as Theme;
       }
-      
+
       return themeData as Theme;
     },
     enabled: !!tenantId,
+    staleTime: 1000 * 60 * 5, // Cache por 5 min
   });
 
-  // Aplicar CSS variables quando tema carregar
+  // Engine de Aplicação do Tema
   useEffect(() => {
-    if (!theme) return;
+    if (!theme?.config) return;
 
     const root = document.documentElement;
+    const config = theme.config;
 
-    // Aplicar cores do tema sobrescrevendo as CSS variables do design system
-    if (theme.colors) {
-      const colors = theme.colors as Record<string, string>;
-      
-      // Aplicar cada variável CSS diretamente
-      Object.entries(colors).forEach(([key, value]) => {
-        // Se a chave já começa com --, usar diretamente
-        // Caso contrário, adicionar o prefixo --
+    // 1. Cores
+    if (config.colors) {
+      Object.entries(config.colors).forEach(([key, value]) => {
         const cssVar = key.startsWith('--') ? key : `--${key}`;
         root.style.setProperty(cssVar, value);
       });
     }
 
-    // Aplicar variáveis adicionais se existirem
-    if (theme.variables) {
-      Object.entries(theme.variables).forEach(([key, value]) => {
-        const cssVar = key.startsWith('--') ? key : `--${key}`;
-        root.style.setProperty(cssVar, value);
-      });
+    // 2. Product Card Styles
+    if (config.productCard) {
+      if (config.productCard.radius) root.style.setProperty("--radius", config.productCard.radius);
+      // Podemos adicionar mais vars se o CSS global suportar, 
+      // mas --radius é padrão do Shadcn.
+      // Para shadow personalizadas, precisaria de suporte no tailwind config ou style inline no card.
     }
 
-    // Cleanup ao desmontar
+    // 3. Fontes (Simulação simples - num app real carregaria do Google Fonts)
+    // Aqui apenas setamos a variável da família
+    if (config.fonts) {
+      if (config.fonts.heading) root.style.setProperty("--font-heading", config.fonts.heading);
+      if (config.fonts.body) root.style.setProperty("--font-sans", config.fonts.body);
+    }
+
+    // Cleanup
     return () => {
-      if (theme.colors) {
-        Object.keys(theme.colors).forEach((key) => {
-          const cssVar = key.startsWith('--') ? key : `--${key}`;
-          root.style.removeProperty(cssVar);
-        });
-      }
-      if (theme.variables) {
-        Object.keys(theme.variables).forEach((key) => {
-          const cssVar = key.startsWith('--') ? key : `--${key}`;
-          root.style.removeProperty(cssVar);
-        });
-      }
+      // Opcional: Resetar para valores padrão ou deixar sobrescritos
+      // Em SPA, geralmente queremos resetar se mudar de página, mas aqui o tema é global.
     };
   }, [theme]);
 
   return {
     theme,
-    isLoading,
-    applyTheme: (colors: Record<string, string>, variables?: Record<string, string>) => {
-      const root = document.documentElement;
-      Object.entries(colors).forEach(([key, value]) => {
-        root.style.setProperty(key, value);
-      });
-      if (variables) {
-        Object.entries(variables).forEach(([key, value]) => {
-          root.style.setProperty(key, value);
-        });
-      }
-    },
-    clearTheme: (colors: Record<string, string>, variables?: Record<string, string>) => {
-      const root = document.documentElement;
-      Object.keys(colors).forEach((key) => {
-        root.style.removeProperty(key);
-      });
-      if (variables) {
-        Object.keys(variables).forEach((key) => {
-          root.style.removeProperty(key);
-        });
-      }
-    },
+    isLoading
   };
 };

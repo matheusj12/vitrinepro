@@ -1,73 +1,165 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Check, Undo2, Palette, AlertCircle } from "lucide-react";
+import { Check, Undo2, Palette, AlertCircle, Eye } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface ThemeConfig {
+  colors?: Record<string, string>;
+  productCard?: {
+    radius?: string;
+    shadow?: string;
+  };
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+}
 
 interface Theme {
   id: string;
   tenant_id: string | null;
   name: string;
   description: string | null;
-  colors: Record<string, string>;
-  variables?: Record<string, string>;
+  config: ThemeConfig;
   is_premium: boolean;
   is_active: boolean;
   thumbnail_url: string | null;
   is_allowed: boolean;
 }
 
-const DEFAULT_THEME_THUMBNAIL = "/images/themes/default-thumb.png";
-const DEFAULT_COLORS = {
-  "--primary": "#ff6a00",
-  "--bg": "#ffffff",
-  "--text": "#222222",
-};
-
 interface ThemesManagerProps {
   tenantId: string;
 }
+
+// Componente visual para pré-visualizar o tema com CSS real
+const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) => {
+  const colors = theme.config?.colors || {};
+  const radius = theme.config?.productCard?.radius || "0.5rem";
+
+  // Função para converter HSLA para string CSS válida se não tiver var()
+  const getColor = (name: string, fallback: string) => {
+    let val = colors[name];
+    if (!val) return fallback;
+    // Se vier no formato "0 0% 100%", wrap em hsl()
+    if (!val.startsWith("#") && !val.startsWith("hsl") && !val.startsWith("rgb")) {
+      return `hsl(${val})`;
+    }
+    return val;
+  };
+
+  const bg = getColor("background", "#ffffff");
+  const fg = getColor("foreground", "#000000");
+  const primary = getColor("primary", "#000000");
+  const primaryFg = getColor("primary-foreground", "#ffffff");
+  const cardBg = getColor("card", "#ffffff");
+  const border = getColor("border", "#e5e7eb");
+
+  return (
+    <div
+      className="relative w-full h-40 overflow-hidden border-b"
+      style={{ backgroundColor: bg }}
+    >
+      {/* Miniatura da Interface */}
+      <div className="absolute inset-0 flex flex-col p-4 gap-3 opacity-90 transition-transform group-hover:scale-105 duration-500">
+
+        {/* Header simulado */}
+        <div className="flex items-center justify-between">
+          <div className="w-16 h-4 rounded" style={{ backgroundColor: fg, opacity: 0.8 }}></div>
+          <div className="flex gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: border }}></div>
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: primary }}></div>
+          </div>
+        </div>
+
+        {/* Hero Banner simulado */}
+        <div
+          className="w-full h-12 rounded flex items-center justify-center"
+          style={{
+            backgroundColor: primary,
+            color: primaryFg,
+            borderRadius: radius,
+            boxShadow: theme.config?.productCard?.shadow || 'none'
+          }}
+        >
+          <span className="text-[10px] font-bold opacity-80" style={{ fontFamily: theme.config?.fonts?.heading }}>
+            {theme.name}
+          </span>
+        </div>
+
+        {/* Grid de produtos simulado */}
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          {[1, 2].map(i => (
+            <div
+              key={i}
+              className="p-2 border"
+              style={{
+                backgroundColor: cardBg,
+                borderColor: border,
+                borderRadius: radius
+              }}
+            >
+              <div className="w-full h-6 bg-black/5 rounded mb-2"></div>
+              <div className="w-10 h-2 bg-black/10 rounded mb-1"></div>
+              <div className="w-6 h-2" style={{ backgroundColor: primary }}></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {isActive && (
+        <div className="absolute top-2 right-2 z-10">
+          <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-none shadow-lg">
+            <Check className="h-3 w-3 mr-1" />
+            Ativo
+          </Badge>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
   const queryClient = useQueryClient();
   const [canRevert, setCanRevert] = useState(false);
 
-  // Buscar temas disponíveis
   const { data: themesResponse, error: themesError, isLoading: themesLoading } = useQuery({
     queryKey: ["themes-list"],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("themes-list");
-        if (error) throw error;
-        return data?.data || [];
-      } catch (err) {
-        console.error("Erro ao carregar temas:", err);
-        return [];
-      }
+      const { data, error } = await supabase.functions.invoke("themes-list");
+      if (error) throw error;
+      return data?.data || [];
     },
   });
 
-  // Buscar tema atual do tenant
   const { data: currentTenant, error: tenantError } = useQuery({
     queryKey: ["tenant-theme", tenantId],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("tenants")
-          .select("selected_theme_id, previous_theme_id")
-          .eq("id", tenantId)
-          .single();
+      const { data, error } = await supabase
+        .from("store_settings")
+        .select("theme_id")
+        .eq("tenant_id", tenantId)
+        .single();
 
-        if (error) throw error;
-        return data;
-      } catch (err) {
-        console.error("Erro ao carregar tema do tenant:", err);
-        return null;
-      }
+      // Também buscar no tenant legacy para garantir compatibilidade
+      const { data: legacyTenant } = await supabase
+        .from("tenants")
+        .select("selected_theme_id, previous_theme_id")
+        .eq("id", tenantId)
+        .single();
+
+      if (error && !legacyTenant) return null;
+
+      return {
+        selected_theme_id: data?.theme_id || legacyTenant?.selected_theme_id,
+        previous_theme_id: legacyTenant?.previous_theme_id
+      };
     },
   });
 
@@ -75,29 +167,14 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
     setCanRevert(!!currentTenant?.previous_theme_id);
   }, [currentTenant]);
 
-  // Mutation para aplicar tema
   const applyMutation = useMutation({
     mutationFn: async ({ themeId }: { themeId: string }) => {
-      try {
-        const { data, error } = await supabase.functions.invoke("themes-apply", {
-          body: { themeId, preview: false },
-        });
-        
-        if (error) {
-          console.error("Erro no edge function themes-apply:", error);
-          throw new Error(error.message || "Erro ao aplicar tema");
-        }
-        
-        if (!data || !data.success) {
-          console.error("Resposta inválida do backend:", data);
-          throw new Error(data?.error || "Erro ao aplicar tema");
-        }
-        
-        return data;
-      } catch (err: any) {
-        console.error("Exceção ao aplicar tema:", err);
-        throw err;
-      }
+      const { data, error } = await supabase.functions.invoke("themes-apply", {
+        body: { themeId, preview: false },
+      });
+      if (error) throw error;
+      if (!data || !data.success) throw new Error(data?.error || "Erro ao aplicar tema");
+      return data;
     },
     onSuccess: () => {
       toast.success("Tema aplicado com sucesso!");
@@ -106,28 +183,17 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
       queryClient.invalidateQueries({ queryKey: ["themes-list"] });
     },
     onError: (error: any) => {
-      console.error("Erro na mutation:", error);
-      const errorMessage = error?.message || "Erro ao aplicar tema. Tente novamente.";
-      toast.error(errorMessage);
+      toast.error(error?.message || "Erro ao aplicar tema");
     },
   });
 
-  // Mutation para reverter tema
   const revertMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("themes-revert", {
-          method: "POST",
-        });
-        if (error) {
-          console.error("Erro ao reverter tema:", error);
-          throw error;
-        }
-        return data;
-      } catch (err) {
-        console.error("Exceção ao reverter tema:", err);
-        throw err;
-      }
+      const { data, error } = await supabase.functions.invoke("themes-revert", {
+        method: "POST",
+      });
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast.success("Tema revertido!");
@@ -136,7 +202,6 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
       setCanRevert(false);
     },
     onError: (error: any) => {
-      console.error("Erro na reversão:", error);
       toast.error(error?.message || "Erro ao reverter tema");
     },
   });
@@ -151,149 +216,121 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
     }
   };
 
-  // Normalizar temas com valores seguros
-  const themes = (Array.isArray(themesResponse) ? themesResponse : []).map((theme: any) => ({
-    ...theme,
-    colors: theme.colors || DEFAULT_COLORS,
-    thumbnail_url: theme.thumbnail_url || DEFAULT_THEME_THUMBNAIL,
-    is_allowed: true, // Todos gratuitos por enquanto
-  }));
-  
   const currentThemeId = currentTenant?.selected_theme_id;
 
-  // Mostrar erro se houver
   if (themesError || tenantError) {
-    console.error("Erro ao carregar dados:", { themesError, tenantError });
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>Erro ao carregar temas. Recarregue a página.</AlertDescription>
+      </Alert>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {(themesError || tenantError) && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Erro ao carregar temas. Por favor, tente recarregar a página.
-            {themesError && <div className="text-xs mt-1">Temas: {String(themesError)}</div>}
-            {tenantError && <div className="text-xs mt-1">Tenant: {String(tenantError)}</div>}
-          </AlertDescription>
-        </Alert>
-      )}
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Aparência da Vitrine</h2>
-          <p className="text-sm text-muted-foreground">
-            Escolha o tema visual da sua loja online
+          <h2 className="text-3xl font-bold tracking-tight">Galeria de Temas</h2>
+          <p className="text-muted-foreground mt-1">
+            Personalize a identidade visual da sua loja com um clique.
           </p>
         </div>
-        {canRevert && (
-          <Button 
-            variant="outline" 
-            onClick={handleRevert}
-            disabled={revertMutation.isPending}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => window.open(`/loja/${window.location.pathname.split('/')[2] || ''}`, '_blank')}
           >
-            <Undo2 className="h-4 w-4 mr-2" />
-            Desfazer Última Mudança
+            <Eye className="w-4 h-4" />
+            Ver Loja
           </Button>
-        )}
+          {canRevert && (
+            <Button
+              variant="secondary"
+              onClick={handleRevert}
+              disabled={revertMutation.isPending}
+            >
+              <Undo2 className="h-4 w-4 mr-2" />
+              Desfazer
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Temas Gratuitos */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Palette className="h-5 w-5" />
-          Temas Gratuitos
-        </h3>
         {themesLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Carregando temas...
-          </div>
-        ) : themes.filter((t: Theme) => !t.is_premium).length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhum tema gratuito disponível
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {themes
-            .filter((t: Theme) => !t.is_premium)
-            .map((theme: Theme) => (
-              <Card
-                key={theme.id}
-                className={`overflow-hidden transition-all hover:shadow-lg ${
-                  currentThemeId === theme.id ? "border-primary border-2" : ""
-                }`}
-              >
-                <div className="relative">
-                  <img
-                    src={theme.thumbnail_url || DEFAULT_THEME_THUMBNAIL}
-                    alt={theme.name}
-                    className="w-full h-40 object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = DEFAULT_THEME_THUMBNAIL;
-                    }}
-                  />
-                  {currentThemeId === theme.id && (
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-primary">
-                        <Check className="h-3 w-3 mr-1" />
-                        Atual
-                      </Badge>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            {((themesResponse as any) || []).map((theme: Theme) => {
+              const isSelected = currentThemeId === theme.id;
+              // Extrair cores para o color dots
+              const colors = theme.config?.colors || {};
+              const palette = [colors.background, colors.primary, colors.accent].filter(Boolean);
+
+              return (
+                <Card
+                  key={theme.id}
+                  className={`group overflow-hidden transition-all duration-300 border-2 ${isSelected
+                      ? "border-primary shadow-xl ring-2 ring-primary/20 scale-[1.02]"
+                      : "border-transparent hover:border-border hover:shadow-lg"
+                    }`}
+                >
+                  <ThemePreview theme={theme} isActive={isSelected} />
+
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-lg">{theme.name}</h4>
+                        <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5em]">
+                          {theme.description || "Um tema moderno e profissional para sua loja."}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold mb-1">{theme.name}</h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {theme.description || "Tema gratuito"}
-                  </p>
-                  <div className="flex gap-1 mb-3">
-                    {Object.values(theme.colors || DEFAULT_COLORS).slice(0, 4).map((color, idx) => (
-                      <div
-                        key={idx}
-                        className="w-6 h-6 rounded-full border-2 border-border"
-                        style={{ backgroundColor: color || "#ccc" }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
+
+                    <div className="flex gap-1.5 mb-5 mt-3">
+                      {palette.map((c, i) => (
+                        <div
+                          key={i}
+                          className="w-5 h-5 rounded-full border border-black/10 shadow-sm"
+                          style={{ backgroundColor: !c?.startsWith('#') && !c?.startsWith('hsl') ? `hsl(${c})` : c }}
+                        />
+                      ))}
+                    </div>
+
                     <Button
-                      size="sm"
+                      className={`w-full font-medium transition-all ${isSelected ? 'bg-primary/90' : ''}`}
+                      variant={isSelected ? "default" : "outline"}
                       onClick={() => handleApply(theme)}
-                      disabled={currentThemeId === theme.id || applyMutation.isPending}
-                      className="flex-1"
+                      disabled={isSelected || applyMutation.isPending}
                     >
-                      {currentThemeId === theme.id ? (
+                      {isSelected ? (
                         <>
-                          <Check className="h-3 w-3 mr-1" />
-                          Aplicado
+                          <Check className="h-4 w-4 mr-2" />
+                          Tema Ativo
                         </>
                       ) : (
-                        "Aplicar"
+                        "Ativar Tema"
                       )}
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
 
-
-      <Card className="bg-muted/50">
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">
-            <strong>💡 Dica:</strong> Clique em "Aplicar" para trocar o tema da sua vitrine. 
-            As mudanças serão visíveis imediatamente na loja online.
-          </p>
-          {themesLoading && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Carregando temas disponíveis...
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-700 text-sm">
+        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+        <p>
+          Dica: Ao trocar de tema, todas as cores, fontes e estilos de cartões da sua loja serão atualizados automaticamente.
+          Seus produtos e configurações permanecem os mesmos.
+        </p>
+      </div>
     </div>
   );
 };
