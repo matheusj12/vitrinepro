@@ -194,7 +194,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const firstImage = images[0] || null;
       const priceNumber = data.price ? normalizePriceToNumber(data.price) : null;
 
-      const { error } = await supabase.from("products").insert({
+      const payload = {
         tenant_id: tenantId,
         name: data.name,
         slug: uniqueSlug,
@@ -207,8 +207,22 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
         image_url: firstImage || DEFAULT_PRODUCT_IMAGE,
         images: images,
         video_url: data.video_url || null,
-      });
-      if (error) throw error;
+      };
+
+      try {
+        const { error } = await supabase.from("products").insert(payload);
+        if (error) throw error;
+      } catch (err: any) {
+        if (err.message && (err.message.includes("images") || err.message.includes("schema"))) {
+          // Fallback para schema antigo
+          const { images, ...legacyPayload } = payload;
+          const { error: retryError } = await supabase.from("products").insert(legacyPayload);
+          if (retryError) throw retryError;
+          toast.info("Salvo em modo de compatibilidade (1ª imagem apenas)");
+        } else {
+          throw err;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
@@ -226,23 +240,35 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const firstImage = images[0] || null;
       const priceNumber = data.price ? normalizePriceToNumber(data.price) : null;
 
-      const { error } = await supabase
-        .from("products")
-        .update({
-          name: data.name,
-          slug: uniqueSlug,
-          sku: data.sku || null,
-          description: data.description || null,
-          price: priceNumber !== null ? priceNumber : null,
-          min_quantity: parseInt(data.min_quantity),
-          category_id: data.category_id || null,
-          active: data.active,
-          image_url: firstImage || DEFAULT_PRODUCT_IMAGE,
-          images: images,
-          video_url: data.video_url || null,
-        })
-        .eq("id", id);
-      if (error) throw error;
+      const payload = {
+        name: data.name,
+        slug: uniqueSlug,
+        sku: data.sku || null,
+        description: data.description || null,
+        price: priceNumber !== null ? priceNumber : null,
+        min_quantity: parseInt(data.min_quantity),
+        category_id: data.category_id || null,
+        active: data.active,
+        image_url: firstImage || DEFAULT_PRODUCT_IMAGE,
+        images: images,
+        video_url: data.video_url || null,
+      };
+
+      try {
+        const { error } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", id);
+        if (error) throw error;
+      } catch (err: any) {
+        if (err.message && (err.message.includes("images") || err.message.includes("schema"))) {
+          const { images, ...legacyPayload } = payload;
+          const { error: retryError } = await supabase.from("products").update(legacyPayload).eq("id", id);
+          if (retryError) throw retryError;
+        } else {
+          throw err;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
@@ -270,7 +296,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const baseSlug = slugify(newName);
       const uniqueSlug = await generateUniqueSlug(tenantId, baseSlug);
 
-      const { error } = await supabase.from('products').insert({
+      const payload = {
         tenant_id: tenantId,
         name: newName,
         slug: uniqueSlug,
@@ -283,8 +309,21 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
         image_url: product.image_url,
         images: product.images,
         video_url: product.video_url
-      });
-      if (error) throw error;
+      };
+
+      try {
+        const { error } = await supabase.from('products').insert(payload);
+        if (error) throw error;
+      } catch (err: any) {
+        if (err.message && (err.message.includes("images") || err.message.includes("schema"))) {
+          const { images, ...legacyPayload } = payload;
+          const { error: retryError } = await supabase.from("products").insert(legacyPayload);
+          if (retryError) throw retryError;
+          toast.info("Duplicado em modo de compatibilidade");
+        } else {
+          throw err;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
@@ -373,14 +412,14 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O produto "{products.find(p => p.id === productToDelete)?.name}" será removido permanentemente.
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.preventDefault(); // Evita fechamento prematuro se quiser loading
+                e.preventDefault();
                 if (productToDelete) {
                   deleteMutation.mutate(productToDelete, {
                     onSuccess: () => setProductToDelete(null)
