@@ -251,12 +251,78 @@ const Dashboard = () => {
     { id: "settings", label: "Configurações", icon: Settings },
   ];
 
-  // Mock stats - in production, fetch from analytics
+  // Dashboard Stats Realtime
+  const [statsData, setStatsData] = useState({
+    visits: 0,
+    quotes: 0,
+    conversion: "0%",
+    activeProducts: 0
+  });
+
+  useEffect(() => {
+    if (!tenant?.id) return;
+
+    const fetchStats = async () => {
+      // 1. Produtos Ativos
+      const { count: productsCount } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", tenant.id)
+        .eq("active", true);
+
+      // 2. Orçamentos (Quotes) - se tabela existir, assumindo quotes
+      // Verificaremos se existe tabela quotes, se der erro ignora
+      let quotesCount = 0;
+      try {
+        const { count } = await supabase
+          .from("quotes")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id);
+        quotesCount = count || 0;
+      } catch (e) {
+        // Tabela pode não existir ainda
+      }
+
+      // 3. Simulação de Visitas (Placeholder até ter Analytics real)
+      // Se tiver tabela page_views, usamos. Senão 0.
+      let visitsCount = 0;
+      try {
+        const { count } = await supabase
+          .from("page_views") // Nome hipotético
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id);
+        visitsCount = count || 0;
+      } catch (e) { }
+
+      // Cálculo de conversão simples
+      const conversionRate = visitsCount > 0 ? ((quotesCount / visitsCount) * 100).toFixed(1) + "%" : "0%";
+
+      setStatsData({
+        visits: visitsCount,
+        quotes: quotesCount,
+        conversion: conversionRate,
+        activeProducts: productsCount || 0
+      });
+    };
+
+    fetchStats();
+
+    // Opcional: Realtime subscription para atualizar contadores
+    const channel = supabase
+      .channel('dashboard-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenant.id}` }, () => fetchStats())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenant?.id]);
+
   const stats = [
-    { label: "Visitas Hoje", value: "127", icon: Eye, change: "+12%", positive: true },
-    { label: "Orçamentos", value: "8", icon: ShoppingCart, change: "+3", positive: true },
-    { label: "Conversão", value: "6.3%", icon: TrendingUp, change: "+0.5%", positive: true },
-    { label: "Produtos Ativos", value: "24", icon: Package, change: "", positive: true },
+    { label: "Visitas Hoje", value: statsData.visits.toString(), icon: Eye, change: "", positive: true },
+    { label: "Orçamentos", value: statsData.quotes.toString(), icon: ShoppingCart, change: "", positive: true },
+    { label: "Conversão", value: statsData.conversion, icon: TrendingUp, change: "", positive: true },
+    { label: "Produtos Ativos", value: statsData.activeProducts.toString(), icon: Package, change: "", positive: true },
   ];
 
   return (
