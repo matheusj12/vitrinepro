@@ -375,51 +375,51 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Problems Section - Por que criar Catálogo Digital */}
-      <section className="py-24 bg-gradient-to-br from-sky-500 to-blue-600 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnY0em0wLTZoLTJ2LTRoMnY0em0wLTZoLTJ2LTRoMnY0em0wLTZoLTJWOGgydjR6bTAgMThoLTJ2LTRoMnY0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Problems Section */}
+      <section className="py-24 relative">
+        <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4 text-white">
-              Veja por que você precisa criar seu{" "}
-              <span className="text-yellow-300">Catálogo Digital</span> agora mesmo:
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-sm font-medium text-red-600 dark:text-red-400 mb-4">
+              Veja por que você precisa criar seu Catálogo Digital
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
+              Problemas que você enfrenta <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">todos os dias</span>
             </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Sem um catálogo digital, seu negócio perde vendas e credibilidade
+            </p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
+                icon: Zap,
                 title: "Retrabalho",
-                subtitle: "Falta de tempo e retrabalho constante",
-                desc: "Sem um catálogo digital, você precisa responder as mesmas perguntas repetidamente, enviar fotos dos produtos um por um e explicar preços e condições sempre do zero. Isso toma tempo e atrapalha outras tarefas importantes do negócio.",
-                rating: 5
+                desc: "Sem um catálogo digital, você responde as mesmas perguntas repetidamente, envia fotos um por um e explica preços do zero. Isso toma tempo e atrapalha tarefas importantes.",
+                color: "from-red-500 to-orange-500"
               },
               {
+                icon: ShoppingBag,
                 title: "Vendas Perdidas",
-                subtitle: "O cliente desiste antes de comprar",
-                desc: "Se o cliente precisa esperar muito para receber informações ou não encontra o que quer de forma rápida, ele desiste e procura outra loja. Sem um site ou catálogo digital, você perde vendas sem nem perceber.",
-                rating: 5
+                desc: "Se o cliente precisa esperar muito para receber informações, ele desiste e procura outra loja. Sem um catálogo digital, você perde vendas sem nem perceber.",
+                color: "from-amber-500 to-yellow-500"
               },
               {
+                icon: Users,
                 title: "Imagem Amadora",
-                subtitle: "Seu negócio parece pequeno e pouco profissional",
-                desc: "Mandar fotos soltas no WhatsApp passa a impressão de improviso. Um catálogo digital valoriza seus produtos, transmite credibilidade e deixa sua marca mais forte no mercado.",
-                rating: 5
+                desc: "Mandar fotos soltas no WhatsApp passa impressão de improviso. Um catálogo digital valoriza seus produtos e transmite credibilidade.",
+                color: "from-purple-500 to-pink-500"
               },
               {
+                icon: MessageCircle,
                 title: "Atendimento Lento",
-                subtitle: "Responde tarde? Cliente compra do concorrente",
-                desc: "Clientes querem rapidez. Se você demora para responder porque está ocupado com outras tarefas, o cliente já entrou em outra loja antes de você responder. Com o catálogo digital, ele já tem tudo sozinho e só chama para fechar o pedido.",
-                rating: 4
+                desc: "Clientes querem rapidez. Se você demora para responder, o cliente já foi para outra loja. Com o catálogo digital, ele tem tudo sozinho.",
+                color: "from-blue-500 to-cyan-500"
               },
             ].map((problem, idx) => (
               <motion.div
@@ -429,22 +429,14 @@ const Index = () => {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
               >
-                <Card className="bg-sky-600/80 backdrop-blur-sm border-sky-400/30 hover:bg-sky-600/90 transition-all duration-300 h-full text-white">
+                <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 h-full">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${problem.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
                   <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Check className="h-5 w-5 text-white bg-white/20 rounded-full p-0.5" />
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${problem.color} flex items-center justify-center mb-4 shadow-lg`}>
+                      <problem.icon className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">{problem.title}</h3>
-                    <p className="text-sm text-sky-100 font-medium mb-3">{problem.subtitle}</p>
-                    <p className="text-sm text-sky-100/80 mb-4 line-clamp-4">{problem.desc}</p>
-                    <div className="flex gap-0.5">
-                      {[...Array(problem.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                      ))}
-                      {[...Array(5 - problem.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-sky-400/50" />
-                      ))}
-                    </div>
+                    <h3 className="text-lg font-bold mb-2">{problem.title}</h3>
+                    <p className="text-sm text-muted-foreground">{problem.desc}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -454,107 +446,68 @@ const Index = () => {
       </section>
 
       {/* Benefits Section - Seu negócio precisa para vender mais */}
-      <section className="py-24 bg-gradient-to-br from-orange-500 to-amber-500 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnY0em0wLTZoLTJ2LTRoMnY0em0wLTZoLTJ2LTRoMnY0em0wLTZoLTJWOGgydjR6bTAgMThoLTJ2LTRoMnY0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
-        </div>
+      <section className="py-24 bg-gradient-to-b from-secondary/50 to-background relative">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
+              <Sparkles className="h-4 w-4" />
+              Seu negócio precisa para vender mais
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              Tudo que você precisa para <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">vender mais</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Ferramentas profissionais pensadas para pequenos e médios negócios
+            </p>
+          </motion.div>
 
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-8 items-center">
-            {/* Left side - Title */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="lg:col-span-3"
-            >
-              <h2 className="text-3xl sm:text-4xl font-heading font-bold text-white leading-tight">
-                Seu negócio precisa para vender mais
-              </h2>
-            </motion.div>
-
-            {/* Right side - Benefits Grid */}
-            <div className="lg:col-span-9">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  {
-                    title: "Vitrine Digital Moderna",
-                    desc: "Exiba seus produtos de forma organizada e profissional. Tenha uma vitrine digital que valoriza sua marca.",
-                    isNew: false
-                  },
-                  {
-                    title: "Venda 24h por Dia",
-                    desc: "Seus produtos disponíveis para seus clientes a qualquer momento, todos os dias da semana.",
-                    isNew: false
-                  },
-                  {
-                    title: "Atendimento Rápido",
-                    desc: "Responda menos perguntas repetitivas e ganhe tempo no WhatsApp com um catálogo digital sempre acessível.",
-                    isNew: false
-                  },
-                  {
-                    title: "Alcance Novos Clientes",
-                    desc: "Expanda suas vendas utilizando a internet e conquiste mais clientes sem esforço.",
-                    isNew: false
-                  },
-                  {
-                    title: "Organização e Praticidade",
-                    desc: "Gerencie seus produtos com facilidade e tenha um controle mais eficiente do seu estoque.",
-                    isNew: false
-                  },
-                  {
-                    title: "Gestão Simplificada",
-                    desc: "Visualize seu estoque de maneira simples e rápida, evitando surpresas na reposição.",
-                    isNew: false
-                  },
-                  {
-                    title: "Pedidos Direto no WhatsApp",
-                    desc: "Seu cliente escolhe os produtos no site e você recebe os pedidos diretamente no WhatsApp.",
-                    isNew: false
-                  },
-                  {
-                    title: "Parcerias e Credibilidade",
-                    desc: "Tenha um site profissional para fechar parcerias e fortalecer sua marca.",
-                    isNew: false
-                  },
-                  {
-                    title: "Sem Limites, Sem Taxas",
-                    desc: "Cadastre quantos produtos quiser, sem restrições e sem cobranças extras.",
-                    isNew: true
-                  },
-                ].map((benefit, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.05 }}
-                  >
-                    <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full hover:-translate-y-1">
-                      <CardContent className="p-5">
-                        <div className="flex items-start gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Check className="h-4 w-4 text-orange-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-bold text-gray-900">{benefit.title}</h3>
-                              {benefit.isNew && (
-                                <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-medium">
-                                  Novidade
-                                </span>
-                              )}
-                            </div>
-                          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: Smartphone, title: "Vitrine Digital Moderna", desc: "Exiba seus produtos de forma organizada e profissional. Tenha uma vitrine digital que valoriza sua marca." },
+              { icon: Globe, title: "Venda 24h por Dia", desc: "Seus produtos disponíveis para seus clientes a qualquer momento, todos os dias da semana." },
+              { icon: Zap, title: "Atendimento Rápido", desc: "Responda menos perguntas repetitivas e ganhe tempo no WhatsApp com um catálogo digital sempre acessível." },
+              { icon: Users, title: "Alcance Novos Clientes", desc: "Expanda suas vendas utilizando a internet e conquiste mais clientes sem esforço." },
+              { icon: BarChart3, title: "Organização e Praticidade", desc: "Gerencie seus produtos com facilidade e tenha um controle mais eficiente do seu estoque." },
+              { icon: Shield, title: "Gestão Simplificada", desc: "Visualize seu estoque de maneira simples e rápida, evitando surpresas na reposição." },
+              { icon: MessageCircle, title: "Pedidos Direto no WhatsApp", desc: "Seu cliente escolhe os produtos no site e você recebe os pedidos diretamente no WhatsApp." },
+              { icon: TrendingUp, title: "Parcerias e Credibilidade", desc: "Tenha um site profissional para fechar parcerias e fortalecer sua marca." },
+              { icon: Sparkles, title: "Sem Limites, Sem Taxas", desc: "Cadastre quantos produtos quiser, sem restrições e sem cobranças extras.", isNew: true },
+            ].map((benefit, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.05 }}
+                whileHover={{ y: -5 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-orange-500/20 group">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <benefit.icon className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className="font-bold">{benefit.title}</h3>
+                          {benefit.isNew && (
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-0.5 rounded-full font-medium">
+                              Novidade
+                            </span>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-600 ml-11">{benefit.desc}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+                        <p className="text-sm text-muted-foreground">{benefit.desc}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
