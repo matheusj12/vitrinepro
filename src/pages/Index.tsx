@@ -55,9 +55,9 @@ const AnimatedCounter = ({ value, suffix = "" }: { value: string; suffix?: strin
 // Floating orbs background
 const FloatingOrbs = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-violet-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse" />
-    <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-    <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-orange-500/30 to-amber-500/30 rounded-full blur-3xl animate-pulse" />
+    <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-gradient-to-r from-orange-400/20 to-yellow-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+    <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
   </div>
 );
 
@@ -128,12 +128,12 @@ const Index = () => {
             whileHover={{ scale: 1.02 }}
           >
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl blur-sm opacity-75" />
-              <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 p-2 rounded-xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl blur-sm opacity-75" />
+              <div className="relative bg-gradient-to-r from-orange-500 to-amber-500 p-2 rounded-xl">
                 <ShoppingBag className="h-6 w-6 text-white" />
               </div>
             </div>
-            <span className="font-bold text-xl bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="font-bold text-xl bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
               VitrinePro
             </span>
           </motion.div>
@@ -151,7 +151,7 @@ const Index = () => {
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
                 onClick={() => navigate("/auth")}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium px-6 shadow-lg shadow-violet-500/25"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium px-6 shadow-lg shadow-orange-500/25"
               >
                 Entrar
               </Button>
@@ -174,7 +174,7 @@ const Index = () => {
             >
               {/* Badge */}
               <motion.div variants={itemVariants}>
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20 text-sm font-medium text-violet-600 dark:text-violet-400 mb-6">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-6">
                   <Sparkles className="h-4 w-4" />
                   Novo: IA para descrições de produtos
                 </span>
@@ -186,7 +186,7 @@ const Index = () => {
                 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold leading-tight mb-6"
               >
                 Transforme seu WhatsApp em uma{" "}
-                <span className="bg-gradient-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 bg-clip-text text-transparent">
                   máquina de vendas
                 </span>
               </motion.h1>
@@ -209,7 +209,7 @@ const Index = () => {
                   <Button
                     onClick={() => navigate("/auth")}
                     size="lg"
-                    className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold text-lg px-8 py-6 shadow-xl shadow-violet-500/30 group"
+                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold text-lg px-8 py-6 shadow-xl shadow-green-500/30 group"
                   >
                     Começar grátis por 7 dias
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -240,7 +240,7 @@ const Index = () => {
                   { value: "87", label: "Taxa de conversão", suffix: "%" },
                 ].map((stat, idx) => (
                   <div key={idx} className="text-center lg:text-left">
-                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
                       <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                     </div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -258,13 +258,13 @@ const Index = () => {
             >
               <div className="relative">
                 {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600/30 to-indigo-600/30 rounded-3xl blur-2xl transform -rotate-3" />
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 to-amber-500/30 rounded-3xl blur-2xl transform -rotate-3" />
 
                 {/* Main card - Glassmorphism */}
                 <div className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-gray-800/50 shadow-2xl p-8 transform hover:scale-[1.02] transition-transform duration-500">
                   {/* Mock storefront header */}
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center">
                       <ShoppingBag className="h-6 w-6 text-white" />
                     </div>
                     <div>
@@ -324,8 +324,8 @@ const Index = () => {
                   className="absolute -left-4 bottom-1/4 bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 border border-border/50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-violet-600" />
+                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
                       <div className="text-sm font-medium">+32% vendas</div>
@@ -521,7 +521,7 @@ const Index = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-sm font-medium text-violet-600 dark:text-violet-400 mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
               <Sparkles className="h-4 w-4" />
               Recursos poderosos
             </span>
@@ -543,10 +543,10 @@ const Index = () => {
                 transition={{ delay: idx * 0.05 }}
                 whileHover={{ y: -5 }}
               >
-                <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-violet-500/20 group">
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-orange-500/20 group">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <feature.icon className="h-6 w-6 text-violet-600" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <feature.icon className="h-6 w-6 text-orange-600" />
                     </div>
                     <h3 className="font-bold mb-2">{feature.title}</h3>
                     <p className="text-sm text-muted-foreground">{feature.desc}</p>
@@ -594,7 +594,7 @@ const Index = () => {
                     </div>
                     <p className="text-lg mb-6 italic">"{testimonial.text}"</p>
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold">
                         {testimonial.avatar}
                       </div>
                       <div>
@@ -619,8 +619,8 @@ const Index = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-sm font-medium text-violet-600 dark:text-violet-400 mb-4">
-              Planos flexíveis
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
+              Planos flexiveis
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
               Escolha o plano ideal para você
@@ -669,15 +669,15 @@ const Index = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="h-full relative border-2 border-violet-500 hover:shadow-2xl transition-all duration-300 shadow-xl shadow-violet-500/10">
+              <Card className="h-full relative border-2 border-orange-500 hover:shadow-2xl transition-all duration-300 shadow-xl shadow-orange-500/10">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                  <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
                     MAIS POPULAR
                   </span>
                 </div>
                 <CardContent className="p-8">
                   <div className="text-center mb-6">
-                    <span className="text-sm font-medium text-violet-600 uppercase tracking-wider">Pro</span>
+                    <span className="text-sm font-medium text-orange-600 uppercase tracking-wider">Pro</span>
                     <div className="mt-2">
                       <span className="text-4xl font-bold">R$ 129</span>
                       <span className="text-muted-foreground">/mês</span>
@@ -694,16 +694,16 @@ const Index = () => {
                       "Suporte prioritário"
                     ].map((feature, i) => (
                       <div key={i} className="flex items-center gap-3">
-                        <Check className="h-5 w-5 text-violet-500 flex-shrink-0" />
+                        <Check className="h-5 w-5 text-orange-500 flex-shrink-0" />
                         <span className="text-sm font-medium">{feature}</span>
                       </div>
                     ))}
                   </div>
                   <Button
-                    className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-500/25"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-lg shadow-green-500/25"
                     onClick={() => navigate("/auth")}
                   >
-                    Testar 7 dias grátis
+                    Testar 7 dias gratis
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -747,9 +747,9 @@ const Index = () => {
 
       {/* Final CTA */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600" />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <FloatingOrbs />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent" />
 
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
@@ -768,7 +768,7 @@ const Index = () => {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   size="lg"
-                  className="bg-white text-violet-600 hover:bg-gray-100 font-semibold text-lg px-8 py-6 shadow-xl group"
+                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold text-lg px-8 py-6 shadow-xl shadow-green-500/30 group"
                   onClick={() => navigate("/auth")}
                 >
                   Começar agora - é grátis
@@ -788,14 +788,14 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-2 rounded-xl">
+              <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-2 rounded-xl">
                 <ShoppingBag className="h-5 w-5 text-white" />
               </div>
               <span className="font-bold text-lg">VitrinePro</span>
             </div>
             <div className="text-sm text-muted-foreground text-center md:text-right">
               <p>© 2025 VitrinePro. Todos os direitos reservados.</p>
-              <p className="mt-1">Feito com 💜 para empreendedores brasileiros</p>
+              <p className="mt-1">Feito com 🧡 para empreendedores brasileiros</p>
             </div>
           </div>
         </div>

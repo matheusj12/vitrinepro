@@ -15,9 +15,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Vivid Violet/Indigo Mix - More Premium SaaS */
-    --primary: 250 96% 62%;
+    /* Vibrant Orange Brand Color #F97615 */
+    --primary: 24 96% 53%;
     --primary-foreground: 210 40% 98%;
+    
+    /* CTA Green #16A34A */
+    --cta: 142 76% 36%;
+    --cta-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -34,18 +38,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 250 96% 62%;
+    --ring: 24 96% 53%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 250 96% 62%;
+    --sidebar-primary: 24 96% 53%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 250 96% 62%;
+    --sidebar-ring: 24 96% 53%;
   }
 
   .dark {
@@ -58,8 +62,11 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 250 96% 62%;
+    --primary: 24 96% 53%;
     --primary-foreground: 210 40% 98%;
+    
+    --cta: 142 76% 36%;
+    --cta-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -75,16 +82,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 250 96% 62%;
+    --ring: 24 96% 53%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 250 96% 62%;
+    --sidebar-primary: 24 96% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 250 96% 62%;
+    --sidebar-ring: 24 96% 53%;
   }
 }
 
@@ -116,22 +123,31 @@
     @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border border-white/30 dark:border-gray-700/30 shadow-xl;
   }
 
-  /* Premium gradients */
+  /* Premium gradients - Orange/Black theme */
   .gradient-primary {
-    @apply bg-gradient-to-r from-indigo-500 to-violet-600;
+    @apply bg-gradient-to-r from-orange-500 to-orange-600;
   }
 
   .gradient-primary-hover {
-    @apply bg-gradient-to-r from-indigo-600 to-violet-700;
+    @apply bg-gradient-to-r from-orange-600 to-orange-700;
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 bg-clip-text text-transparent;
+  }
+  
+  /* CTA Button Green */
+  .btn-cta {
+    @apply bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold shadow-lg;
   }
 
   /* Glow effects */
   .glow-primary {
-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); /* Indigo glow */
+    box-shadow: 0 0 40px rgba(249, 118, 21, 0.3); /* Orange glow */
+  }
+  
+  .glow-cta {
+    box-shadow: 0 0 30px rgba(22, 163, 74, 0.4); /* Green CTA glow */
   }
 
   /* Smooth hover scale */
