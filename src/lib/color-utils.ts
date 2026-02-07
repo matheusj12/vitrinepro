@@ -1,16 +1,18 @@
 
-// Helper simples para checar se uma cor é escura (usado para setar text-white ou text-black automaticamente)
+// Helper robusto para checar se uma cor é escura
+// Suporta: Hex, RGB, HSL com prefixo, e HSL puro (formato Tailwind: "H S L" ou "H S% L%")
 export function isDarkColor(color: string): boolean {
     if (!color) return false;
 
-    // Se for variável CSS, não conseguimos saber facilmente, assume false
+    // Se for variável CSS, não conseguimos saber, assume false (tema claro)
     if (color.startsWith("var(")) return false;
 
-    let r = 0, g = 0, b = 0;
+    const trimmed = color.trim();
 
-    // Hex
-    if (color.startsWith("#")) {
-        const hex = color.substring(1);
+    // === HEX ===
+    if (trimmed.startsWith("#")) {
+        const hex = trimmed.substring(1);
+        let r = 0, g = 0, b = 0;
         if (hex.length === 3) {
             r = parseInt(hex[0] + hex[0], 16);
             g = parseInt(hex[1] + hex[1], 16);
@@ -20,26 +22,47 @@ export function isDarkColor(color: string): boolean {
             g = parseInt(hex.substring(2, 4), 16);
             b = parseInt(hex.substring(4, 6), 16);
         }
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return yiq < 128;
     }
-    // RGB
-    else if (color.startsWith("rgb")) {
-        const values = color.match(/\d+/g);
+
+    // === RGB/RGBA ===
+    if (trimmed.startsWith("rgb")) {
+        const values = trimmed.match(/[\d.]+/g);
         if (values && values.length >= 3) {
-            r = parseInt(values[0]);
-            g = parseInt(values[1]);
-            b = parseInt(values[2]);
-        }
-    }
-    // HSL
-    else if (color.startsWith("hsl")) {
-        const values = color.match(/\d+/g);
-        if (values && values.length >= 3) {
-            const l = parseInt(values[2]);
-            return l < 60; // Se luminosidade menor que 60%, considera escuro
+            const r = parseFloat(values[0]);
+            const g = parseFloat(values[1]);
+            const b = parseFloat(values[2]);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return yiq < 128;
         }
     }
 
-    // Fórmula de luminância relativa (YIQ)
-    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-    return yiq < 128;
+    // === HSL com prefixo hsl() ===
+    if (trimmed.startsWith("hsl")) {
+        const values = trimmed.match(/[\d.]+/g);
+        if (values && values.length >= 3) {
+            const l = parseFloat(values[2]);
+            // Luminosidade: 0 = preto, 100 = branco
+            // Considera escuro se L < 50%
+            return l < 50;
+        }
+    }
+
+    // === HSL puro (formato Tailwind/Shadcn: "210 40% 98%" ou "222.2 84 4.9") ===
+    // Tenta parsear como "H S L" ou "H S% L%"
+    const hslParts = trimmed.split(/\s+/);
+    if (hslParts.length >= 3) {
+        // O terceiro valor é a luminosidade
+        const lValue = hslParts[2].replace('%', '');
+        const l = parseFloat(lValue);
+        if (!isNaN(l)) {
+            // Luminosidade: 0 = preto, 100 = branco
+            // Considera escuro se L < 50%
+            return l < 50;
+        }
+    }
+
+    // Fallback: assume tema claro
+    return false;
 }
