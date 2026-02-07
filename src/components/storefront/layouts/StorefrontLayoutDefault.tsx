@@ -8,9 +8,13 @@ import { SocialProofWidget } from "@/components/storefront/SocialProofWidget";
 import { FloatingWhatsAppButton } from "@/components/storefront/FloatingWhatsAppButton";
 import { StorefrontBottomNav } from "@/components/storefront/StorefrontBottomNav";
 import { StorefrontCategoryScroll } from "@/components/storefront/StorefrontCategoryScroll";
+import { ProductStories } from "@/components/storefront/ProductStories";
+import { SocialProofToast } from "@/components/storefront/SocialProofToast";
+import { ProductReels } from "@/components/storefront/ProductReels";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 export const StorefrontLayoutDefault = ({
     tenant,
@@ -32,6 +36,21 @@ export const StorefrontLayoutDefault = ({
 
     const { items } = useCart();
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+
+    // Infinite scroll for products (Instagram-style)
+    const {
+        visibleProducts,
+        hasMore,
+        isLoading: isLoadingMore,
+        sentinelRef,
+    } = useInfiniteScroll({
+        products,
+        initialLimit: 12,
+        incrementBy: 8,
+    });
+
+    // Product names for social proof notifications
+    const productNames = products.map((p) => p.name);
 
     // Links do cliente
     const contact = (storeSettings?.contact as any) || {};
@@ -85,6 +104,30 @@ export const StorefrontLayoutDefault = ({
 
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-12">
                 <StorefrontBanner banners={banners} />
+
+                {/* Instagram-style Product Stories (Featured products) */}
+                {products.filter(p => p.featured).length > 0 && (
+                    <div className="mt-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <ProductStories
+                            products={products}
+                            onAddToCart={handleAddToCart}
+                        />
+                    </div>
+                )}
+
+                {/* Product Reels (Products with videos) */}
+                {products.filter(p => p.video_url).length > 0 && (
+                    <div className="mt-4 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex items-center gap-2 mb-3 px-4">
+                            <span className="text-lg">🎬</span>
+                            <h3 className="text-lg font-bold text-foreground">Reels</h3>
+                        </div>
+                        <ProductReels
+                            products={products}
+                            onAddToCart={handleAddToCart}
+                        />
+                    </div>
+                )}
 
                 {/* Mobile Category Scroll (Visible only on mobile) */}
                 <div className="md:hidden mt-6 mb-8">
@@ -168,11 +211,26 @@ export const StorefrontLayoutDefault = ({
                             </div>
 
                             <StorefrontProductGrid
-                                products={products}
+                                products={visibleProducts}
                                 isLoading={isLoadingProducts}
                                 gridClasses="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8"
                                 onAddToCart={handleAddToCart}
                             />
+
+                            {/* Infinite scroll sentinel */}
+                            {hasMore && (
+                                <div
+                                    ref={sentinelRef}
+                                    className="flex justify-center py-8"
+                                >
+                                    {isLoadingMore && (
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                            <span className="text-sm">Carregando mais...</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -190,7 +248,12 @@ export const StorefrontLayoutDefault = ({
                     />
                 )}
 
-            <SocialProofWidget tenantId={tenant?.id || ""} enabled={true} />
+            {/* Advanced Social Proof Toast Notifications */}
+            <SocialProofToast
+                productNames={productNames}
+                viewersCount={Math.floor(Math.random() * 15) + 5}
+                enabled={true}
+            />
 
             <StorefrontBottomNav slug={tenant?.slug!} cartCount={totalItems} />
         </div>
