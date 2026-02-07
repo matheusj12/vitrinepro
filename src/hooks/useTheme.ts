@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isDarkColor } from "@/lib/color-utils";
 
 // Interface alinhada com o banco de dados
 interface ThemeConfig {
@@ -98,6 +99,18 @@ export const useTheme = (tenantId?: string) => {
         const cssVar = key.startsWith('--') ? key : `--${key}`;
         root.style.setProperty(cssVar, value);
       });
+
+      // Detecta se o background é escuro e aplica a classe 'dark' para correção de contraste
+      // Isso força o Tailwind a usar as variantes dark:text-gray-XXX que são mais claras
+      const bg = config.colors.background || config.colors['--background'];
+      if (bg) {
+        const isDark = isDarkColor(bg);
+        if (isDark) {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      }
     }
 
     // 2. Product Card Styles

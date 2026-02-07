@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isDarkColor } from "@/lib/color-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,13 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
   };
 
   const bg = getColor("background", "#ffffff");
-  const fg = getColor("foreground", "#000000");
+
+  // Smart contrast for preview
+  let fg = getColor("foreground", "#000000");
+  if (isDarkColor(bg) && (!theme.config?.colors?.foreground || theme.config.colors.foreground === '#000000')) {
+    fg = '#ffffff';
+  }
+
   const primary = getColor("primary", "#000000");
   const bgMuted = getColor("muted", "#f3f4f6");
 
@@ -325,8 +332,8 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
                   <div className="flex gap-3">
                     <Button
                       className={`flex-1 font-bold h-11 transition-all ${isSelected
-                          ? 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
-                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
+                        ? 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
+                        : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
                         }`}
                       onClick={() => handleApply(theme)}
                       disabled={isSelected || applyMutation.isPending}

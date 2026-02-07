@@ -6,7 +6,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Lighter, cooler gray for background */
+    --background: 210 40% 98%;
+    /* Lighter, cooler gray for background */
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -17,8 +18,9 @@
 
     /* Vibrant Orange Brand Color #F97615 */
     --primary: 24 96% 53%;
-    --primary-foreground: 0 0% 100%; /* White text on primary */
-    
+    --primary-foreground: 0 0% 100%;
+    /* White text on primary */
+
     /* CTA Green #16A34A - Keep as secondary action/success */
     --cta: 142 76% 36%;
     --cta-foreground: 0 0% 100%;
@@ -29,8 +31,10 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 24 96% 96%; /* Very light orange for backgrounds */
-    --accent-foreground: 24 96% 40%; /* Darker orange for text */
+    --accent: 24 96% 96%;
+    /* Very light orange for backgrounds */
+    --accent-foreground: 24 96% 40%;
+    /* Darker orange for text */
 
     /* Vibrant Red for Destructive */
     --destructive: 0 84.2% 60.2%;
@@ -40,7 +44,8 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 24 96% 53%;
 
-    --radius: 1rem; /* More rounded corners for modern look */
+    --radius: 1rem;
+    /* More rounded corners for modern look */
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -64,7 +69,7 @@
 
     --primary: 24 96% 53%;
     --primary-foreground: 0 0% 100%;
-    
+
     --cta: 142 76% 36%;
     --cta-foreground: 0 0% 100%;
 
@@ -72,9 +77,11 @@
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 80%;
+    /* Increased lightness from 65% to 80% */
 
-    --accent: 24 50% 15%; /* Dark orange tint */
+    --accent: 24 50% 15%;
+    /* Dark orange tint */
     --accent-foreground: 24 96% 60%;
 
     --destructive: 0 62.8% 30.6%;
@@ -104,7 +111,12 @@
     @apply bg-background text-foreground antialiased font-sans selection:bg-primary/20 selection:text-primary;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading tracking-tight;
   }
 
@@ -114,6 +126,7 @@
 }
 
 @layer utilities {
+
   /* Glassmorphism effects */
   .glass {
     @apply bg-white/70 dark:bg-black/70 backdrop-blur-md border border-white/20 dark:border-white/10;
@@ -122,7 +135,7 @@
   .glass-card {
     @apply bg-white/50 dark:bg-black/40 backdrop-blur-lg border border-white/40 dark:border-white/10 shadow-sm transition-all duration-300;
   }
-  
+
   .glass-card:hover {
     @apply bg-white/80 dark:bg-black/60 border-white/60 dark:border-white/20 shadow-lg transform -translate-y-[2px];
   }
@@ -139,7 +152,7 @@
   .gradient-text {
     @apply bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 bg-clip-text text-transparent;
   }
-  
+
   /* CTA Button Green */
   .btn-cta {
     @apply bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-green-500/20;
@@ -147,11 +160,13 @@
 
   /* Glow effects */
   .glow-primary {
-    box-shadow: 0 0 40px rgba(249, 118, 21, 0.2); /* Soft Orange glow */
+    box-shadow: 0 0 40px rgba(249, 118, 21, 0.2);
+    /* Soft Orange glow */
   }
-  
+
   .glow-cta {
-    box-shadow: 0 0 30px rgba(22, 163, 74, 0.3); /* Green CTA glow */
+    box-shadow: 0 0 30px rgba(22, 163, 74, 0.3);
+    /* Green CTA glow */
   }
 
   /* Smooth hover scale */
