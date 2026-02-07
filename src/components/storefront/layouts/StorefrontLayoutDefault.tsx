@@ -6,6 +6,8 @@ import { StorefrontFilters } from "@/components/storefront/StorefrontFilters";
 import { StorefrontProductGrid } from "@/components/storefront/StorefrontProductGrid";
 import { SocialProofWidget } from "@/components/storefront/SocialProofWidget";
 import { FloatingWhatsAppButton } from "@/components/storefront/FloatingWhatsAppButton";
+import { StorefrontBottomNav } from "@/components/storefront/StorefrontBottomNav";
+import { StorefrontCategoryScroll } from "@/components/storefront/StorefrontCategoryScroll";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
@@ -27,6 +29,9 @@ export const StorefrontLayoutDefault = ({
     handleAddToCart,
     globalIcons
 }: StorefrontLayoutProps) => {
+
+    const { items } = useCart();
+    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
     // Links do cliente
     const contact = (storeSettings?.contact as any) || {};
@@ -53,7 +58,7 @@ export const StorefrontLayoutDefault = ({
     const logoUrl = (storeSettings as any)?.branding?.logo_url;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-20 md:pb-0">
             <PublicHeader
                 storeName={tenant?.company_name || "Loja"}
                 logoUrl={logoUrl}
@@ -78,59 +83,76 @@ export const StorefrontLayoutDefault = ({
                 slug={tenant?.slug!}
             />
 
-            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-12">
                 <StorefrontBanner banners={banners} />
 
-                <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 mt-12 transition-all">
-                    <StorefrontFilters
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        selectedCategoryIds={selectedCategoryIds}
-                        setSelectedCategoryIds={setSelectedCategoryIds}
-                        sortOption={sortOption}
-                        setSortOption={setSortOption}
+                {/* Mobile Category Scroll (Visible only on mobile) */}
+                <div className="md:hidden mt-6 mb-8">
+                    <StorefrontCategoryScroll
                         categories={categories}
-                        debouncedSearchQuery={debouncedSearchQuery}
+                        selectedCategoryIds={selectedCategoryIds}
+                        onSelectCategory={(id) => {
+                            if (id === 'all') setSelectedCategoryIds([]);
+                            else setSelectedCategoryIds([id]);
+                        }}
                     />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 mt-4 sm:mt-12 transition-all">
+                    <div className="hidden md:block">
+                        <StorefrontFilters
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            selectedCategoryIds={selectedCategoryIds}
+                            setSelectedCategoryIds={setSelectedCategoryIds}
+                            sortOption={sortOption}
+                            setSortOption={setSortOption}
+                            categories={categories}
+                            debouncedSearchQuery={debouncedSearchQuery}
+                        />
+                    </div>
 
                     <div className="min-w-0">
-                        {categories.length > 0 && !debouncedSearchQuery && (
-                            <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-heading font-bold">Navegar por Categorias</h2>
-                                </div>
+                        {/* Desktop Category Pills (Hidden on mobile to avoid duplication with Scroll) */}
+                        <div className="hidden md:block">
+                            {categories.length > 0 && !debouncedSearchQuery && (
+                                <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-xl font-heading font-bold">Navegar por Categorias</h2>
+                                    </div>
 
-                                <div className="flex gap-3 flex-wrap">
-                                    <button
-                                        onClick={() => setSelectedCategoryIds([])}
-                                        className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.length === 0
-                                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
-                                            : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
-                                            }`}
-                                    >
-                                        Todas
-                                    </button>
-                                    {categories.map((category) => (
+                                    <div className="flex gap-3 flex-wrap">
                                         <button
-                                            key={category.id}
-                                            onClick={() => {
-                                                if (selectedCategoryIds.includes(category.id)) {
-                                                    setSelectedCategoryIds(prev => prev.filter(id => id !== category.id));
-                                                } else {
-                                                    setSelectedCategoryIds(prev => [...prev, category.id]);
-                                                }
-                                            }}
-                                            className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.includes(category.id)
+                                            onClick={() => setSelectedCategoryIds([])}
+                                            className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.length === 0
                                                 ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
                                                 : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
                                                 }`}
                                         >
-                                            {category.name}
+                                            Todas
                                         </button>
-                                    ))}
+                                        {categories.map((category) => (
+                                            <button
+                                                key={category.id}
+                                                onClick={() => {
+                                                    if (selectedCategoryIds.includes(category.id)) {
+                                                        setSelectedCategoryIds(prev => prev.filter(id => id !== category.id));
+                                                    } else {
+                                                        setSelectedCategoryIds(prev => [...prev, category.id]);
+                                                    }
+                                                }}
+                                                className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.includes(category.id)
+                                                    ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                                                    : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
+                                                    }`}
+                                            >
+                                                {category.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
                         <div>
                             <div className="flex items-end justify-between mb-6">
@@ -142,12 +164,13 @@ export const StorefrontLayoutDefault = ({
                                         {products.length} produtos encontrados
                                     </p>
                                 </div>
+                                {/* Mobile Sort Option could go here */}
                             </div>
 
                             <StorefrontProductGrid
                                 products={products}
                                 isLoading={isLoadingProducts}
-                                gridClasses="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+                                gridClasses="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8"
                                 onAddToCart={handleAddToCart}
                             />
                         </div>
@@ -168,14 +191,15 @@ export const StorefrontLayoutDefault = ({
                 )}
 
             <SocialProofWidget tenantId={tenant?.id || ""} enabled={true} />
-            <StickyCartBar slug={tenant?.slug!} />
+
+            <StorefrontBottomNav slug={tenant?.slug!} cartCount={totalItems} />
         </div>
     );
 };
 
 // Componentes auxiliares (Footer e StickyBar) copiados para simplificar importação
 const StorefrontFooter = ({ tenant, storeSettings }: { tenant: any, storeSettings: any }) => (
-    <footer className="border-t border-border mt-20">
+    <footer className="border-t border-border mt-20 mb-16 md:mb-0">
         <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
             <div className="flex flex-col items-center gap-6">
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-violet-600/20 flex items-center justify-center">
@@ -203,27 +227,3 @@ const StorefrontFooter = ({ tenant, storeSettings }: { tenant: any, storeSetting
         </div>
     </footer>
 );
-
-const StickyCartBar = ({ slug }: { slug: string }) => {
-    const { items, getTotalPrice } = useCart();
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-    const totalPrice = getTotalPrice();
-
-    if (totalItems === 0) return null;
-
-    return (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-40 md:hidden">
-            <div className="bg-foreground text-background rounded-2xl shadow-2xl p-4 flex items-center justify-between animate-in slide-in-from-bottom-5 duration-300">
-                <div className="flex flex-col">
-                    <span className="text-xs font-medium text-background/80">{totalItems} iten{totalItems !== 1 && 's'}</span>
-                    <span className="font-bold text-lg">R$ {totalPrice.toFixed(2)}</span>
-                </div>
-                <Link to={`/loja/${slug}/carrinho`}>
-                    <Button size="sm" className="bg-background text-foreground hover:bg-background/90 font-bold px-6 rounded-xl">
-                        Ver Carrinho
-                    </Button>
-                </Link>
-            </div>
-        </div>
-    );
-};
