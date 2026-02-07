@@ -64,11 +64,10 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
 
   const bg = getColor("background", "#ffffff");
 
-  // Smart contrast for preview
-  let fg = getColor("foreground", "#000000");
-  if (isDarkColor(bg) && (!theme.config?.colors?.foreground || theme.config.colors.foreground === '#000000')) {
-    fg = '#ffffff';
-  }
+  // Intelligent contrast: Always use white text on dark backgrounds, black on light
+  const isDark = isDarkColor(bg);
+  const fg = isDark ? '#ffffff' : '#000000';
+  const fgMuted = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)';
 
   const primary = getColor("primary", "#000000");
   const bgMuted = getColor("muted", "#f3f4f6");
@@ -81,11 +80,11 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
         style={{ backgroundColor: bg }}
       >
         {/* Header Mock */}
-        <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: getColor("border", "#e5e7eb") }}>
-          <div className="w-20 h-3 rounded-full opacity-80" style={{ backgroundColor: fg }}></div>
+        <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+          <div className="w-20 h-3 rounded-full" style={{ backgroundColor: fg, opacity: 0.8 }}></div>
           <div className="flex gap-2">
-            <div className="w-6 h-6 rounded-full opacity-20" style={{ backgroundColor: fg }}></div>
-            <div className="w-6 h-6 rounded-full opacity-20" style={{ backgroundColor: fg }}></div>
+            <div className="w-6 h-6 rounded-full" style={{ backgroundColor: fgMuted }}></div>
+            <div className="w-6 h-6 rounded-full" style={{ backgroundColor: fgMuted }}></div>
           </div>
         </div>
 
@@ -96,9 +95,9 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
           <div className="flex gap-3 overflow-hidden">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex-1 space-y-2">
-                <div className="w-full aspect-square rounded-md bg-black/5"></div>
-                <div className="w-3/4 h-2 rounded bg-black/10"></div>
-                <div className="w-1/2 h-2 rounded bg-black/10"></div>
+                <div className="w-full aspect-square rounded-md" style={{ backgroundColor: fgMuted }}></div>
+                <div className="w-3/4 h-2 rounded" style={{ backgroundColor: fgMuted }}></div>
+                <div className="w-1/2 h-2 rounded" style={{ backgroundColor: fgMuted }}></div>
               </div>
             ))}
           </div>
