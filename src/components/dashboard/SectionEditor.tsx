@@ -410,7 +410,7 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
                 </div>
                 <div className="flex gap-2">
                     <Input
-                        placeholder="Cole o link ou Place ID"
+                        placeholder="Cole o LINK do Google Maps aqui"
                         value={googleInput}
                         onChange={(e) => setGoogleInput(e.target.value)}
                         className="flex-1 text-sm bg-white"
@@ -433,7 +433,7 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
                     </Button>
                 </div>
                 <p className="text-xs text-blue-700/80">
-                    Acesse sua empresa no Google Maps e copie o link no navegador.
+                    💡 <b>Dica:</b> Copie o link direto da barra de endereços do seu navegador quando estiver na página da empresa no Google Maps.
                 </p>
                 {importError && (
                     <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-100">{importError}</p>
