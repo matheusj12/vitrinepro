@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Check, Undo2, AlertCircle, Eye, Monitor, Smartphone, Palette, LayoutTemplate, LayoutPanelLeft } from "lucide-react";
+import { Check, Undo2, AlertCircle, Eye, Monitor, Smartphone, Palette, LayoutTemplate, LayoutPanelLeft, Image } from "lucide-react";
 import PageBuilderManager from "./PageBuilderManager";
+import BannersManager from "./BannersManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -245,14 +246,21 @@ const ThemesManager = ({ tenantId, slug }: ThemesManagerProps) => {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 sm:p-6">
       {/* Top Tabs: Temas + Seções */}
       <Tabs defaultValue="temas" className="w-full">
-        <TabsList className="w-full max-w-md">
+        <TabsList className="w-full max-w-lg">
           <TabsTrigger value="temas" className="flex-1 gap-2">
             <Palette className="h-4 w-4" /> Temas
+          </TabsTrigger>
+          <TabsTrigger value="banners" className="flex-1 gap-2">
+            <Image className="h-4 w-4" /> Banners
           </TabsTrigger>
           <TabsTrigger value="secoes" className="flex-1 gap-2">
             <LayoutPanelLeft className="h-4 w-4" /> Seções
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="banners" className="mt-6">
+          <BannersManager tenantId={tenantId} />
+        </TabsContent>
 
         <TabsContent value="secoes" className="mt-6">
           <PageBuilderManager tenantId={tenantId} slug={slug} />

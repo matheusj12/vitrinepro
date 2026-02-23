@@ -11,7 +11,6 @@ import ProductsManager from "@/components/dashboard/ProductsManager";
 import CategoriesManager from "@/components/dashboard/CategoriesManager";
 import QuotesManager from "@/components/dashboard/QuotesManager";
 import SettingsManager from "@/components/dashboard/SettingsManager";
-import BannersManager from "@/components/dashboard/BannersManager";
 import AnalyticsDashboard from "@/components/dashboard/AnalyticsDashboard";
 import NotificationsManager from "@/components/dashboard/NotificationsManager";
 import ThemesManager from "@/components/dashboard/ThemesManager";
@@ -199,7 +198,7 @@ const Dashboard = () => {
         setActiveTab("categories");
         break;
       case "new-banner":
-        setActiveTab("banners");
+        setActiveTab("themes");
         break;
       case "copy-link":
         handleCopyLink();
@@ -294,7 +293,6 @@ const Dashboard = () => {
     switch (tab) {
       case "products": return "Gerenciar Produtos";
       case "categories": return "Categorias";
-      case "banners": return "Banners da Loja";
       case "quotes": return "Orçamentos";
       case "orders": return "Pedidos";
       case "customers": return "Clientes";
@@ -459,7 +457,6 @@ const Dashboard = () => {
               >
                 {activeTab === "products" && <ProductsManager tenantId={tenant.id} />}
                 {activeTab === "categories" && <CategoriesManager tenantId={tenant.id} />}
-                {activeTab === "banners" && <BannersManager tenantId={tenant.id} />}
                 {activeTab === "quotes" && <QuotesManager tenantId={tenant.id} />}
                 {activeTab === "orders" && <OrdersManager tenantId={tenant.id} />}
                 {activeTab === "customers" && <CustomersManager tenantId={tenant.id} />}

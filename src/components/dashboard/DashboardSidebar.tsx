@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import {
     Package,
     Tags,
-    Image,
     FileText,
     ShoppingCart,
     UserCircle,
@@ -38,7 +37,6 @@ interface DashboardSidebarProps {
 const navigationItems = [
     { id: "products", label: "Produtos", icon: Package },
     { id: "categories", label: "Categorias", icon: Tags },
-    { id: "banners", label: "Banners", icon: Image },
     { id: "quotes", label: "Orçamentos", icon: FileText },
     { id: "orders", label: "Pedidos", icon: ShoppingCart },
     { id: "customers", label: "Clientes", icon: UserCircle },
