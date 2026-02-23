@@ -426,43 +426,9 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
                     </Button>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-blue-100">
-                    <Label className="text-[10px] uppercase text-blue-800 font-bold mb-2 block tracking-tight">Ou use o Importador Mágico (Sem Chave API)</Label>
-                    <Textarea
-                        placeholder="Cole aqui o texto dos depoimentos que você copiou do Google Maps (Ctrl+C / Ctrl+V)..."
-                        rows={3}
-                        className="text-xs bg-white border-blue-100 italic"
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length < 20) return;
-
-                            // Simple logic to detect "Author, Rating, Text" patterns from clipboard
-                            // This is a basic version, can be improved
-                            const sections = val.split(/\d+\s+meses|\d+\s+anos|\d+\s+semanas/i);
-                            if (sections.length > 1) {
-                                const newItems = sections.map(s => {
-                                    const lines = s.trim().split('\n');
-                                    if (lines.length < 2) return null;
-                                    return {
-                                        name: lines[0].trim(),
-                                        text: lines[lines.length - 1].trim(),
-                                        rating: 5,
-                                        source: "google"
-                                    };
-                                }).filter(Boolean);
-
-                                if (newItems.length > 0) {
-                                    onUpdate([...items, ...(newItems as any[])]);
-                                    e.target.value = ""; // clear after magic import
-                                    setImportSuccess(`✅ ${newItems.length} depoimentos detectados e adicionados!`);
-                                }
-                            }
-                        }}
-                    />
-                    <p className="text-[10px] text-blue-600/70 mt-1">
-                        <b>Como usar:</b> Selecione os depoimentos no Google com o mouse, copie e cole na caixa acima.
-                    </p>
-                </div>
+                <p className="text-xs text-blue-700/80">
+                    💡 <b>Dica:</b> Copie o link direto da barra de endereços do seu navegador quando estiver na página da empresa no Google Maps.
+                </p>
 
                 {importError && (
                     <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-100">{importError}</p>
