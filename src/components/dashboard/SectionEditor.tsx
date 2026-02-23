@@ -347,23 +347,21 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
         setImportError("");
         setImportSuccess("");
 
-        // Try to extract place ID/FID/CID from URL
-        if (input.includes("google.com")) {
-            const lrdMatch = input.match(/lrd=([^,]+)/);
-            if (lrdMatch) {
-                input = lrdMatch[1]; // FID:CID
-            } else {
-                // If it's a share link, we'll let the edge function handle resolving it
-                // Or try to extract from typical maps URL
-                const mapsMatch = input.match(/place\/([^\/]+)\/data=/);
-                if (mapsMatch) {
-                    // Extract from data=... !1sID
-                    const dataMatch = input.match(/!1s([^!]+)/);
-                    if (dataMatch) input = dataMatch[1];
-                }
+        // SMART PARSER: Check if it's raw text pasted instead of a URL
+        if (!input.includes("http") && input.length > 50) {
+            const parsedReviews = parsePasteContent(input);
+            if (parsedReviews.length > 0) {
+                const existingKeys = new Set(items.map((item: any) => `${item.name}|${item.text}`));
+                const newReviews = parsedReviews.filter((r: any) => !existingKeys.has(`${r.name}|${r.text}`));
+                onUpdate([...items, ...newReviews]);
+                setImportSuccess(`✅ ${newReviews.length} avaliações extraídas com sucesso do texto colado!`);
+                setGoogleInput("");
+                setImporting(false);
+                return;
             }
         }
 
+        // If it's a URL, try the backend function (optional fallback)
         try {
             const { supabase } = await import("@/integrations/supabase/client");
             const { data, error } = await supabase.functions.invoke("fetch-google-reviews", {
@@ -371,28 +369,84 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
             });
 
             if (error) throw new Error(error.message || "Erro ao buscar reviews");
-            if (data?.error) throw new Error(data.error);
+            if (data?.error) {
+                // If the error is about API key/billing, give the Magic Paste tip
+                if (data.error.includes("billing") || data.error.includes("Place ID") || data.error.includes("API")) {
+                    setImportError("O Google bloqueou a importação automática via link (requer chave paga). Use a 'Dica' abaixo para importar GRÁTIS!");
+                    return;
+                }
+                throw new Error(data.error);
+            }
 
             const reviews = data?.reviews || [];
             if (reviews.length === 0) {
-                setImportError("Nenhuma avaliação encontrada para esse link/ID.");
+                setImportError("Nenhuma avaliação encontrada.");
                 return;
             }
 
-            // Merge: avoid duplicates
             const existingKeys = new Set(items.map((item: any) => `${item.name}|${item.text}`));
             const newReviews = reviews.filter((r: any) => !existingKeys.has(`${r.name}|${r.text}`));
             onUpdate([...items, ...newReviews]);
 
-            setImportSuccess(
-                `✅ ${newReviews.length} avaliação(ões) importada(s) de "${data?.placeName || "Google"}".`
-            );
+            setImportSuccess(`✅ ${newReviews.length} avaliações importadas de "${data?.placeName || "Google"}".`);
             setGoogleInput("");
         } catch (err: any) {
-            setImportError(err?.message || "Erro ao importar do Google");
+            setImportError("Erro no link. Tente copiar e colar o texto das avaliações diretamente (Dica abaixo)!");
         } finally {
             setImporting(false);
         }
+    };
+
+    const parsePasteContent = (text: string) => {
+        const reviews: any[] = [];
+        const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Check for star patterns: "5 estrelas", "4 stars", "★★★★★"
+            const starMatch = line.match(/^([1-5])\s*(estrelas|stars|★)/i) ||
+                line.match(/(estrelas|stars|★)/i);
+
+            if (starMatch) {
+                let name = i > 0 ? lines[i - 1] : "Cliente";
+
+                // Skip common metadata lines to find the real name
+                let nameIdx = i - 1;
+                while (nameIdx >= 0 && (
+                    lines[nameIdx].includes("Local Guide") ||
+                    lines[nameIdx].includes("comentários") ||
+                    lines[nameIdx].includes("Foto") ||
+                    lines[nameIdx].match(/^\d+$/)
+                )) {
+                    nameIdx--;
+                }
+                if (nameIdx >= 0) name = lines[nameIdx];
+
+                const rating = starMatch[1] ? parseInt(starMatch[1]) : 5;
+                let reviewText = "";
+                let role = "Google Maps";
+
+                // Look for the date/time line
+                if (i + 1 < lines.length && lines[i + 1].match(/há|ago|mês|ano|dia|semana/i)) {
+                    role = lines[i + 1];
+                    if (i + 2 < lines.length) reviewText = lines[i + 2];
+                } else if (i + 1 < lines.length) {
+                    reviewText = lines[i + 1];
+                }
+
+                if (reviewText && reviewText.length > 5 && !reviewText.includes("Compartilhar")) {
+                    reviews.push({
+                        name: name.substring(0, 50),
+                        text: reviewText,
+                        rating: rating,
+                        role: role,
+                        source: "google"
+                    });
+                }
+            }
+        }
+        return reviews;
     };
 
     return (
@@ -408,27 +462,36 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
                     </svg>
                     <Label className="text-sm font-semibold text-blue-800 dark:text-blue-300">Sincronizar com Google Maps</Label>
                 </div>
-                <div className="flex gap-2">
-                    <Input
-                        placeholder="Cole o LINK do Google Maps aqui"
-                        value={googleInput}
-                        onChange={(e) => setGoogleInput(e.target.value)}
-                        className="flex-1 text-sm bg-white"
-                    />
+                <div className="flex flex-col gap-2">
+                    <Label className="text-[10px] text-blue-700 font-bold uppercase ml-1">Cole o Link OU o Texto da Avaliação</Label>
+                    <div className="flex gap-2">
+                        <textarea
+                            placeholder="Copie as avaliações do Google e COLE aqui..."
+                            value={googleInput}
+                            onChange={(e) => setGoogleInput(e.target.value)}
+                            className="flex-1 text-sm bg-white border border-blue-200 rounded-md p-2 min-h-[80px] focus:ring-1 focus:ring-blue-400 outline-none"
+                        />
+                    </div>
                     <Button
                         variant="default"
                         size="sm"
                         onClick={handleImportGoogle}
                         disabled={importing}
-                        className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 h-10"
                     >
-                        {importing ? "Sincronizando..." : "Importar"}
+                        {importing ? "Processando..." : "Importar Agora"}
                     </Button>
                 </div>
 
-                <p className="text-xs text-blue-700/80">
-                    💡 <b>Dica:</b> Copie o link direto da barra de endereços do seu navegador quando estiver na página da empresa no Google Maps.
-                </p>
+                <div className="bg-white/50 p-2 rounded border border-blue-100 space-y-2">
+                    <p className="text-[10px] text-blue-800 leading-tight">
+                        🚀 <b>COMO USAR SEM CUSTO:</b><br />
+                        1. Abre o Google Maps e procure sua loja.<br />
+                        2. Clique na aba <b>Avaliações</b>.<br />
+                        3. Selecione o texto das avaliações com o mouse e dê <b>Ctrl+C</b>.<br />
+                        4. Volte aqui e dê <b>Ctrl+V</b> no campo acima e clique em Importar.
+                    </p>
+                </div>
 
                 {importError && (
                     <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-100">{importError}</p>
