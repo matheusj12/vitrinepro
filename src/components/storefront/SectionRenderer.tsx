@@ -88,6 +88,7 @@ export const SectionRenderer = ({
     // Contact and icon data
     const contact = (storeSettings?.contact as any) || {};
     const logoUrl = (storeSettings as any)?.branding?.logo_url;
+    const aboutText = (storeSettings as any)?.branding?.about_text as string | undefined;
     const floatingIconUrl = (storeSettings as any)?.floating_button_icon_url as string | undefined;
     const productNames = products.map((p) => p.name);
 
@@ -198,8 +199,8 @@ export const SectionRenderer = ({
                                                 <button
                                                     onClick={() => setSelectedCategoryIds([])}
                                                     className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.length === 0
-                                                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
-                                                            : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
+                                                        ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                                                        : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
                                                         }`}
                                                 >
                                                     Todas
@@ -215,8 +216,8 @@ export const SectionRenderer = ({
                                                             }
                                                         }}
                                                         className={`h-10 px-6 rounded-full text-sm font-medium transition-all duration-300 border ${selectedCategoryIds.includes(category.id)
-                                                                ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
-                                                                : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
+                                                            ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25'
+                                                            : 'bg-background hover:bg-secondary border-border hover:border-primary/30'
                                                             }`}
                                                     >
                                                         {category.name}
@@ -268,6 +269,17 @@ export const SectionRenderer = ({
                                         {tenant?.company_name?.charAt(0) || 'L'}
                                     </span>
                                 </div>
+
+                                {/* Sobre a Loja */}
+                                {aboutText && aboutText.trim() && (
+                                    <div className="max-w-2xl mx-auto space-y-3">
+                                        <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/70">Sobre a Loja</h3>
+                                        <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+                                            {aboutText}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="space-y-4 max-w-md mx-auto">
                                     <p className="text-sm">{tenant?.company_name} - Todos os direitos reservados.</p>
                                 </div>
