@@ -43,6 +43,8 @@ const Storefront = () => {
       return data as StoreSettings & { themes: Theme };
     },
     enabled: !!tenant?.id,
+    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000, // 30s — recarrega ao trocar de aba
   });
 
   // Favicon dinâmico
