@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Check, Undo2, AlertCircle, Eye, Monitor, Smartphone, Palette, LayoutTemplate } from "lucide-react";
+import { Check, Undo2, AlertCircle, Eye, Monitor, Smartphone, Palette, LayoutTemplate, LayoutPanelLeft } from "lucide-react";
+import PageBuilderManager from "./PageBuilderManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,6 +47,7 @@ interface Theme {
 
 interface ThemesManagerProps {
   tenantId: string;
+  slug?: string;
 }
 
 // Visualização aprimorada do tema
@@ -119,7 +121,7 @@ const ThemePreview = ({ theme, isActive }: { theme: Theme; isActive: boolean }) 
   );
 };
 
-const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
+const ThemesManager = ({ tenantId, slug }: ThemesManagerProps) => {
   const queryClient = useQueryClient();
   const [canRevert, setCanRevert] = useState(false);
   const [previewTheme, setPreviewTheme] = useState<Theme | null>(null);
@@ -240,129 +242,147 @@ const ThemesManager = ({ tenantId }: ThemesManagerProps) => {
   const themes = (themesResponse as any) || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 sm:p-6">
+      {/* Top Tabs: Temas + Seções */}
+      <Tabs defaultValue="temas" className="w-full">
+        <TabsList className="w-full max-w-md">
+          <TabsTrigger value="temas" className="flex-1 gap-2">
+            <Palette className="h-4 w-4" /> Temas
+          </TabsTrigger>
+          <TabsTrigger value="secoes" className="flex-1 gap-2">
+            <LayoutPanelLeft className="h-4 w-4" /> Seções
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-heading font-bold tracking-tight">Galeria de Temas</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl">
-            Escolha o visual perfeito para sua marca. Todos os temas são otimizados para conversão e mobile-first.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          {canRevert && (
-            <Button
-              variant="secondary"
-              onClick={handleRevert}
-              disabled={revertMutation.isPending}
-              className="flex-1 md:flex-none"
-            >
-              <Undo2 className="h-4 w-4 mr-2" />
-              Desfazer Mudança
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            className="gap-2 flex-1 md:flex-none border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
-            onClick={() => window.open(`/loja/${window.location.pathname.split('/')[2] || ''}`, '_blank')}
-          >
-            <Eye className="w-4 h-4" />
-            Ver Minha Loja
-          </Button>
-        </div>
-      </div>
+        <TabsContent value="secoes" className="mt-6">
+          <PageBuilderManager tenantId={tenantId} slug={slug} />
+        </TabsContent>
 
-      {/* Themes Grid */}
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-        {themesLoading ? (
-          [1, 2, 3].map(i => (
-            <Card key={i} className="overflow-hidden border-0 shadow-sm">
-              <Skeleton className="w-full aspect-[4/3]" />
-              <div className="p-6 space-y-4">
-                <Skeleton className="h-6 w-1/2" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-10 w-full rounded-lg" />
-              </div>
-            </Card>
-          ))
-        ) : (
-          themes.map((theme: Theme) => {
-            const isSelected = currentThemeId === theme.id;
-            const colors = theme.config?.colors || {};
-            const palette = [colors.background, colors.primary, colors.accent].filter(Boolean);
+        <TabsContent value="temas" className="mt-6 space-y-8">
 
-            return (
-              <Card
-                key={theme.id}
-                className={`group overflow-hidden transition-all duration-500 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 ${isSelected ? "ring-2 ring-primary ring-offset-2" : ""
-                  }`}
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b">
+            <div className="space-y-1">
+              <h2 className="text-3xl font-heading font-bold tracking-tight">Galeria de Temas</h2>
+              <p className="text-muted-foreground text-lg max-w-2xl">
+                Escolha o visual perfeito para sua marca. Todos os temas são otimizados para conversão e mobile-first.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {canRevert && (
+                <Button
+                  variant="secondary"
+                  onClick={handleRevert}
+                  disabled={revertMutation.isPending}
+                  className="flex-1 md:flex-none"
+                >
+                  <Undo2 className="h-4 w-4 mr-2" />
+                  Desfazer Mudança
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="gap-2 flex-1 md:flex-none border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                onClick={() => window.open(`/loja/${window.location.pathname.split('/')[2] || ''}`, '_blank')}
               >
-                <ThemePreview theme={theme} isActive={isSelected} />
+                <Eye className="w-4 h-4" />
+                Ver Minha Loja
+              </Button>
+            </div>
+          </div>
 
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-heading font-bold text-xl text-foreground flex items-center gap-2">
-                        {theme.name}
-                        {theme.is_premium && (
-                          <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-100">Premium</Badge>
-                        )}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2 min-h-[2.5em]">
-                        {theme.description || "Um tema moderno focado em experiência do usuário e conversão."}
-                      </p>
-                    </div>
+          {/* Themes Grid */}
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            {themesLoading ? (
+              [1, 2, 3].map(i => (
+                <Card key={i} className="overflow-hidden border-0 shadow-sm">
+                  <Skeleton className="w-full aspect-[4/3]" />
+                  <div className="p-6 space-y-4">
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-10 w-full rounded-lg" />
                   </div>
+                </Card>
+              ))
+            ) : (
+              themes.map((theme: Theme) => {
+                const isSelected = currentThemeId === theme.id;
+                const colors = theme.config?.colors || {};
+                const palette = [colors.background, colors.primary, colors.accent].filter(Boolean);
 
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Paleta:</span>
-                    <div className="flex -space-x-1.5 hover:space-x-1 transition-all">
-                      {palette.map((c, i) => (
-                        <div
-                          key={i}
-                          className="w-6 h-6 rounded-full border border-white shadow-sm ring-1 ring-black/5"
-                          style={{ backgroundColor: !c?.startsWith('#') && !c?.startsWith('hsl') ? `hsl(${c})` : c }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                return (
+                  <Card
+                    key={theme.id}
+                    className={`group overflow-hidden transition-all duration-500 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 ${isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+                      }`}
+                  >
+                    <ThemePreview theme={theme} isActive={isSelected} />
 
-                  <div className="flex gap-3">
-                    <Button
-                      className={`flex-1 font-bold h-11 transition-all ${isSelected
-                        ? 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
-                        : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
-                        }`}
-                      onClick={() => handleApply(theme)}
-                      disabled={isSelected || applyMutation.isPending}
-                    >
-                      {isSelected ? (
-                        <>
-                          <Check className="h-4 w-4 mr-2" />
-                          Tema Atual
-                        </>
-                      ) : (
-                        <>
-                          <LayoutTemplate className="h-4 w-4 mr-2" />
-                          Aplicar Tema
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="font-heading font-bold text-xl text-foreground flex items-center gap-2">
+                            {theme.name}
+                            {theme.is_premium && (
+                              <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-100">Premium</Badge>
+                            )}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2 min-h-[2.5em]">
+                            {theme.description || "Um tema moderno focado em experiência do usuário e conversão."}
+                          </p>
+                        </div>
+                      </div>
 
-      <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex gap-3 text-blue-700 dark:text-blue-400 text-sm">
-        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-        <p>
-          <strong>Dica Pro:</strong> Todos os temas são responsivos. Verifique sua loja no celular para ver a versão mobile otimizada.
-        </p>
-      </div>
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Paleta:</span>
+                        <div className="flex -space-x-1.5 hover:space-x-1 transition-all">
+                          {palette.map((c, i) => (
+                            <div
+                              key={i}
+                              className="w-6 h-6 rounded-full border border-white shadow-sm ring-1 ring-black/5"
+                              style={{ backgroundColor: !c?.startsWith('#') && !c?.startsWith('hsl') ? `hsl(${c})` : c }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          className={`flex-1 font-bold h-11 transition-all ${isSelected
+                            ? 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
+                            : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
+                            }`}
+                          onClick={() => handleApply(theme)}
+                          disabled={isSelected || applyMutation.isPending}
+                        >
+                          {isSelected ? (
+                            <>
+                              <Check className="h-4 w-4 mr-2" />
+                              Tema Atual
+                            </>
+                          ) : (
+                            <>
+                              <LayoutTemplate className="h-4 w-4 mr-2" />
+                              Aplicar Tema
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+
+          <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 flex gap-3 text-blue-700 dark:text-blue-400 text-sm">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p>
+              <strong>Dica Pro:</strong> Todos os temas são responsivos. Verifique sua loja no celular para ver a versão mobile otimizada.
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

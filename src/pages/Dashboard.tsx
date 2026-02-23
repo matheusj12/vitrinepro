@@ -23,7 +23,6 @@ import OrdersManager from "@/components/dashboard/OrdersManager";
 import CatalogExport from "@/components/dashboard/CatalogExport";
 import StockManager from "@/components/dashboard/StockManager";
 import PlansManager from "@/components/dashboard/PlansManager";
-import PageBuilderManager from "@/components/dashboard/PageBuilderManager";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -468,8 +467,7 @@ const Dashboard = () => {
                 {activeTab === "analytics" && <AnalyticsDashboard tenantId={tenant.id} />}
                 {activeTab === "stock" && <StockManager tenantId={tenant.id} />}
                 {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} />}
-                {activeTab === "themes" && <ThemesManager tenantId={tenant.id} />}
-                {activeTab === "pagebuilder" && <PageBuilderManager tenantId={tenant.id} slug={tenant.slug} />}
+                {activeTab === "themes" && <ThemesManager tenantId={tenant.id} slug={tenant.slug} />}
                 {activeTab === "qrcode" && <QRCodeGenerator storeUrl={storeUrl} storeName={tenant.company_name} />}
                 {activeTab === "notifications" && <NotificationsManager tenantId={tenant.id} />}
                 {activeTab === "plans" && <PlansManager tenantId={tenant.id} />}
