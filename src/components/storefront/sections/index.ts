@@ -1,0 +1,11 @@
+export { CTASection } from "./CTASection";
+export { BrandsCarousel } from "./BrandsCarousel";
+export { TestimonialsSection } from "./TestimonialsSection";
+export { NewsletterSection } from "./NewsletterSection";
+export { ImageTextSection } from "./ImageTextSection";
+export { FAQSection } from "./FAQSection";
+export { StatsCounterSection } from "./StatsCounterSection";
+export { VideoEmbedSection } from "./VideoEmbedSection";
+export { ContactMapSection } from "./ContactMapSection";
+export { SpacerSection } from "./SpacerSection";
+export { FeaturedProductsSection } from "./FeaturedProductsSection";
