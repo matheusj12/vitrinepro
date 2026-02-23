@@ -347,15 +347,20 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
         setImportError("");
         setImportSuccess("");
 
-        // SMART PARSER: Check if it's raw text pasted instead of a URL
-        if (!input.includes("http") && input.length > 50) {
+        // SMART PARSER: Check if it's raw text OR JSON pasted instead of a URL
+        const isJson = input.trim().startsWith('{') || input.trim().startsWith('[');
+        if (isJson || (!input.includes("http") && input.length > 50)) {
             const parsedReviews = parsePasteContent(input);
             if (parsedReviews.length > 0) {
                 const existingKeys = new Set(items.map((item: any) => `${item.name}|${item.text}`));
                 const newReviews = parsedReviews.filter((r: any) => !existingKeys.has(`${r.name}|${r.text}`));
                 onUpdate([...items, ...newReviews]);
-                setImportSuccess(`✅ ${newReviews.length} avaliações extraídas com sucesso do texto colado!`);
+                setImportSuccess(`✅ ${newReviews.length} avaliações extraídas com sucesso!`);
                 setGoogleInput("");
+                setImporting(false);
+                return;
+            } else if (isJson) {
+                setImportError("O JSON colado parece inválido ou não contém avaliações reconhecidas.");
                 setImporting(false);
                 return;
             }
@@ -399,6 +404,41 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
 
     const parsePasteContent = (text: string) => {
         const reviews: any[] = [];
+
+        // 1. ATTEMPT JSON PARSE (Handles Outscraper, HasData and other structured sources)
+        try {
+            const data = JSON.parse(text);
+
+            // Outscraper Format Support
+            if (data.data?.[0]?.reviews_data) {
+                return data.data[0].reviews_data.map((r: any) => ({
+                    name: (r.author_title || "Cliente").substring(0, 50),
+                    text: r.review_text || "",
+                    rating: r.review_rating || 5,
+                    avatarUrl: r.author_image || "",
+                    role: r.review_datetime_utc || r.review_timestamp || "Google Maps",
+                    source: "google"
+                })).filter((r: { text: any; }) => r.text);
+            }
+
+            // HasData / Generic Format
+            const rawItems = Array.isArray(data) ? data : (data.reviews || []);
+
+            if (Array.isArray(rawItems) && rawItems.length > 0) {
+                return rawItems.map((r: any) => ({
+                    name: (r.user?.name || r.authorAttribution?.displayName || r.name || "Cliente").substring(0, 50),
+                    text: r.snippet || r.text?.text || r.text || "",
+                    rating: r.rating || 5,
+                    avatarUrl: r.user?.thumbnail || r.authorAttribution?.photoUri || r.avatarUrl || "",
+                    role: r.date || r.relativePublishTimeDescription || "Google Maps",
+                    source: "google"
+                })).filter(r => r.text);
+            }
+        } catch (e) {
+            // Not a valid JSON, fallback to text/regex parser
+        }
+
+        // 2. TEXT/REGEX PARSER (Fallback for manual copy-paste)
         const lines = text.split("\n").map(l => l.trim()).filter(l => l);
 
         for (let i = 0; i < lines.length; i++) {
@@ -485,11 +525,10 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
 
                 <div className="bg-white/50 p-2 rounded border border-blue-100 space-y-2">
                     <p className="text-[10px] text-blue-800 leading-tight">
-                        🚀 <b>COMO USAR SEM CUSTO:</b><br />
-                        1. Abre o Google Maps e procure sua loja.<br />
-                        2. Clique na aba <b>Avaliações</b>.<br />
-                        3. Selecione o texto das avaliações com o mouse e dê <b>Ctrl+C</b>.<br />
-                        4. Volte aqui e dê <b>Ctrl+V</b> no campo acima e clique em Importar.
+                        🚀 <b>OPÇÕES GRÁTIS:</b><br />
+                        1. <b>Magic Paste:</b> Copie as avaliações no Google Maps e cole aqui.<br />
+                        2. <b>HasData JSON:</b> Se tiver o JSON da HasData, cole ele inteiro aqui.<br />
+                        3. Clique em <b>Importar Agora</b>.
                     </p>
                 </div>
 
