@@ -108,6 +108,7 @@ export interface BrandsCarouselConfig {
     title?: string;
     logos: Array<{ url: string; name?: string }>;
     speed?: 'slow' | 'normal' | 'fast';
+    logoSize?: 'small' | 'medium' | 'large';
 }
 
 export interface TestimonialsConfig {

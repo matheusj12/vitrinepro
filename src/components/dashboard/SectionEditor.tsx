@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Plus, Trash2, Star } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 
 interface SectionEditorProps {
     section: PageSection;
@@ -95,6 +95,16 @@ export const SectionEditor = ({ section, onSave, onCancel }: SectionEditorProps)
                                 { value: "fast", label: "Rápido" },
                             ]}
                             onChange={(v) => update("speed", v)}
+                        />
+                        <SelectField
+                            label="Tamanho do Logo"
+                            value={config.logoSize || "medium"}
+                            options={[
+                                { value: "small", label: "Pequeno" },
+                                { value: "medium", label: "Médio" },
+                                { value: "large", label: "Grande" },
+                            ]}
+                            onChange={(v) => update("logoSize", v)}
                         />
                         <ArrayField
                             label="Logos (URLs das imagens)"
@@ -330,281 +340,37 @@ const ArrayField = ({ label, items, onUpdate }: { label: string; items: string[]
 
 // ---- Complex Sub-Editors ----
 
-const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => {
-    const [googleInput, setGoogleInput] = React.useState("");
-    const [importing, setImporting] = React.useState(false);
-    const [importError, setImportError] = React.useState("");
-    const [importSuccess, setImportSuccess] = React.useState("");
-
-    const handleImportGoogle = async () => {
-        let input = googleInput.trim();
-        if (!input) {
-            setImportError("Informe o link ou Place ID do Google Maps");
-            return;
-        }
-
-        setImporting(true);
-        setImportError("");
-        setImportSuccess("");
-
-        // SMART PARSER: Check if it's raw text OR JSON pasted instead of a URL
-        const isJson = input.trim().startsWith('{') || input.trim().startsWith('[');
-        if (isJson || (!input.includes("http") && input.length > 50)) {
-            const parsedReviews = parsePasteContent(input);
-            if (parsedReviews.length > 0) {
-                const existingKeys = new Set(items.map((item: any) => `${item.name}|${item.text}`));
-                const newReviews = parsedReviews.filter((r: any) => !existingKeys.has(`${r.name}|${r.text}`));
-                onUpdate([...items, ...newReviews]);
-                setImportSuccess(`✅ ${newReviews.length} avaliações extraídas com sucesso!`);
-                setGoogleInput("");
-                setImporting(false);
-                return;
-            } else if (isJson) {
-                setImportError("O JSON colado parece inválido ou não contém avaliações reconhecidas.");
-                setImporting(false);
-                return;
-            }
-        }
-
-        // If it's a URL, try the backend function (optional fallback)
-        try {
-            const { supabase } = await import("@/integrations/supabase/client");
-            const { data, error } = await supabase.functions.invoke("fetch-google-reviews", {
-                body: { input },
-            });
-
-            if (error) throw new Error(error.message || "Erro ao buscar reviews");
-            if (data?.error) {
-                // If the error is about API key/billing, give the Magic Paste tip
-                if (data.error.includes("billing") || data.error.includes("Place ID") || data.error.includes("API")) {
-                    setImportError("O Google bloqueou a importação automática via link (requer chave paga). Use a 'Dica' abaixo para importar GRÁTIS!");
-                    return;
-                }
-                throw new Error(data.error);
-            }
-
-            const reviews = data?.reviews || [];
-            if (reviews.length === 0) {
-                setImportError("Nenhuma avaliação encontrada.");
-                return;
-            }
-
-            const existingKeys = new Set(items.map((item: any) => `${item.name}|${item.text}`));
-            const newReviews = reviews.filter((r: any) => !existingKeys.has(`${r.name}|${r.text}`));
-            onUpdate([...items, ...newReviews]);
-
-            setImportSuccess(`✅ ${newReviews.length} avaliações importadas de "${data?.placeName || "Google"}".`);
-            setGoogleInput("");
-        } catch (err: any) {
-            setImportError("Erro no link. Tente copiar e colar o texto das avaliações diretamente (Dica abaixo)!");
-        } finally {
-            setImporting(false);
-        }
-    };
-
-    const parsePasteContent = (text: string) => {
-        const reviews: any[] = [];
-
-        // 1. ATTEMPT JSON PARSE (Handles Outscraper, HasData and other structured sources)
-        try {
-            const data = JSON.parse(text);
-
-            // Outscraper Format Support
-            if (data.data?.[0]?.reviews_data) {
-                return data.data[0].reviews_data.map((r: any) => ({
-                    name: (r.author_title || "Cliente").substring(0, 50),
-                    text: r.review_text || "",
-                    rating: r.review_rating || 5,
-                    avatarUrl: r.author_image || "",
-                    role: r.review_datetime_utc || r.review_timestamp || "Google Maps",
-                    source: "google"
-                })).filter((r: { text: any; }) => r.text);
-            }
-
-            // HasData / Generic Format
-            const rawItems = Array.isArray(data) ? data : (data.reviews || []);
-
-            if (Array.isArray(rawItems) && rawItems.length > 0) {
-                return rawItems.map((r: any) => ({
-                    name: (r.user?.name || r.authorAttribution?.displayName || r.name || "Cliente").substring(0, 50),
-                    text: r.snippet || r.text?.text || r.text || "",
-                    rating: r.rating || 5,
-                    avatarUrl: r.user?.thumbnail || r.authorAttribution?.photoUri || r.avatarUrl || "",
-                    role: r.date || r.relativePublishTimeDescription || "Google Maps",
-                    source: "google"
-                })).filter(r => r.text);
-            }
-        } catch (e) {
-            // Not a valid JSON, fallback to text/regex parser
-        }
-
-        // 2. TEXT/REGEX PARSER (Fallback for manual copy-paste)
-        const lines = text.split("\n").map(l => l.trim()).filter(l => l);
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-
-            // Check for star patterns: "5 estrelas", "4 stars", "★★★★★"
-            const starMatch = line.match(/^([1-5])\s*(estrelas|stars|★)/i) ||
-                line.match(/(estrelas|stars|★)/i);
-
-            if (starMatch) {
-                let name = i > 0 ? lines[i - 1] : "Cliente";
-
-                // Skip common metadata lines to find the real name
-                let nameIdx = i - 1;
-                while (nameIdx >= 0 && (
-                    lines[nameIdx].includes("Local Guide") ||
-                    lines[nameIdx].includes("comentários") ||
-                    lines[nameIdx].includes("Foto") ||
-                    lines[nameIdx].match(/^\d+$/)
-                )) {
-                    nameIdx--;
-                }
-                if (nameIdx >= 0) name = lines[nameIdx];
-
-                const rating = starMatch[1] ? parseInt(starMatch[1]) : 5;
-                let reviewText = "";
-                let role = "Google Maps";
-
-                // Look for the date/time line
-                if (i + 1 < lines.length && lines[i + 1].match(/há|ago|mês|ano|dia|semana/i)) {
-                    role = lines[i + 1];
-                    if (i + 2 < lines.length) reviewText = lines[i + 2];
-                } else if (i + 1 < lines.length) {
-                    reviewText = lines[i + 1];
-                }
-
-                if (reviewText && reviewText.length > 5 && !reviewText.includes("Compartilhar")) {
-                    reviews.push({
-                        name: name.substring(0, 50),
-                        text: reviewText,
-                        rating: rating,
-                        role: role,
-                        source: "google"
-                    });
-                }
-            }
-        }
-        return reviews;
-    };
-
-    return (
-        <div className="space-y-4">
-            {/* Google Import Section */}
-            <div className="p-4 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-blue-600">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z" />
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23Z" />
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62Z" />
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53Z" />
-                    </svg>
-                    <Label className="text-sm font-semibold text-blue-800 dark:text-blue-300">Sincronizar com Google Maps</Label>
-                </div>
-                <div className="flex flex-col gap-2">
-                    <Label className="text-[10px] text-blue-700 font-bold uppercase ml-1">Cole o Link OU o Texto da Avaliação</Label>
-                    <div className="flex gap-2">
-                        <textarea
-                            placeholder="Copie as avaliações do Google e COLE aqui..."
-                            value={googleInput}
-                            onChange={(e) => setGoogleInput(e.target.value)}
-                            className="flex-1 text-sm bg-white border border-blue-200 rounded-md p-2 min-h-[80px] focus:ring-1 focus:ring-blue-400 outline-none"
-                        />
-                    </div>
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={handleImportGoogle}
-                        disabled={importing}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 h-10"
-                    >
-                        {importing ? "Processando..." : "Importar Agora"}
+const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => (
+    <div className="space-y-3">
+        <Label className="text-sm font-medium">Depoimentos</Label>
+        {items.map((item, i) => (
+            <div key={i} className="p-4 border rounded-xl space-y-2 bg-muted/30">
+                <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-muted-foreground">Depoimento {i + 1}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onUpdate(items.filter((_, j) => j !== i))}>
+                        <Trash2 className="h-3 w-3" />
                     </Button>
                 </div>
-
-                <div className="bg-white/50 p-2 rounded border border-blue-100 space-y-2">
-                    <p className="text-[10px] text-blue-800 leading-tight">
-                        🚀 <b>OPÇÕES GRÁTIS:</b><br />
-                        1. <b>Magic Paste:</b> Copie as avaliações no Google Maps e cole aqui.<br />
-                        2. <b>HasData JSON:</b> Se tiver o JSON da HasData, cole ele inteiro aqui.<br />
-                        3. Clique em <b>Importar Agora</b>.
-                    </p>
+                <Input placeholder="Nome" value={item.name || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], name: e.target.value }; onUpdate(n); }} />
+                <Textarea placeholder="Texto do depoimento" value={item.text || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], text: e.target.value }; onUpdate(n); }} rows={2} />
+                <Input placeholder="Cargo / Função" value={item.role || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], role: e.target.value }; onUpdate(n); }} />
+                <div className="flex items-center gap-2">
+                    <Label className="text-xs">Nota:</Label>
+                    <select
+                        value={item.rating || 5}
+                        onChange={(e) => { const n = [...items]; n[i] = { ...n[i], rating: parseInt(e.target.value) }; onUpdate(n); }}
+                        className="h-8 px-2 rounded border text-sm"
+                    >
+                        {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r} ⭐</option>)}
+                    </select>
                 </div>
-
-                {importError && (
-                    <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 p-2 rounded border border-red-100">{importError}</p>
-                )}
-                {importSuccess && (
-                    <p className="text-xs text-green-700 bg-green-50 dark:bg-green-950/30 p-2 rounded border border-green-100">{importSuccess}</p>
-                )}
             </div>
-
-            {/* Manual testimonials list */}
-            <Label className="text-sm font-medium">Depoimentos</Label>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {items.map((item, i) => (
-                    <div key={i} className="p-4 border rounded-xl space-y-3 bg-muted/30 relative">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                                # {i + 1}
-                                {item.source === "google" && (
-                                    <span className="ml-2 inline-flex items-center gap-1 text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                                        Google Maps
-                                    </span>
-                                )}
-                            </span>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => onUpdate(items.filter((_, j) => j !== i))}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Nome</Label>
-                                <Input placeholder="Ex: João Silva" value={item.name || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], name: e.target.value }; onUpdate(n); }} className="h-8 text-sm" />
-                            </div>
-                            <div className="space-y-1">
-                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Cargo / Cidade</Label>
-                                <Input placeholder="Ex: Goiânia - GO" value={item.role || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], role: e.target.value }; onUpdate(n); }} className="h-8 text-sm" />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase text-muted-foreground font-bold">Foto do Cliente (URL)</Label>
-                            <Input placeholder="URL da imagem ou deixe vazio" value={item.avatarUrl || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], avatarUrl: e.target.value }; onUpdate(n); }} className="h-8 text-sm" />
-                        </div>
-
-                        <div className="space-y-1">
-                            <Label className="text-[10px] uppercase text-muted-foreground font-bold">Depoimento</Label>
-                            <Textarea placeholder="O que o cliente disse..." value={item.text || ""} onChange={(e) => { const n = [...items]; n[i] = { ...n[i], text: e.target.value }; onUpdate(n); }} rows={3} className="text-sm italic" />
-                        </div>
-
-                        <div className="flex items-center gap-3 bg-white/50 p-2 rounded-lg border">
-                            <Label className="text-xs font-bold text-muted-foreground">NOTA:</Label>
-                            <div className="flex gap-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                        key={star}
-                                        type="button"
-                                        onClick={() => { const n = [...items]; n[i] = { ...n[i], rating: star }; onUpdate(n); }}
-                                        className={`transition-all ${star <= (item.rating || 5) ? "text-amber-400 scale-110" : "text-slate-200"}`}
-                                    >
-                                        <Star className={`h-5 w-5 ${star <= (item.rating || 5) ? "fill-current" : ""}`} />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <Button variant="outline" className="w-full border-dashed" onClick={() => onUpdate([...items, { name: "", text: "", rating: 5 }])}>
-                <Plus className="h-4 w-4 mr-1" /> Criar Depoimento Manual
-            </Button>
-        </div>
-    );
-};
+        ))}
+        <Button variant="outline" size="sm" onClick={() => onUpdate([...items, { name: "", text: "", rating: 5 }])}>
+            <Plus className="h-4 w-4 mr-1" /> Adicionar Depoimento
+        </Button>
+    </div>
+);
 
 const FAQEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => (
     <div className="space-y-3">
