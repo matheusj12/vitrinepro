@@ -68,7 +68,7 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
                                     <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                                         <Mail className="h-5 w-5 text-primary" />
                                     </div>
-                                    <span className="font-medium text-foreground truncate min-w-0">{email}</span>
+                                    <span className="font-medium text-foreground break-all min-w-0 text-sm sm:text-base">{email}</span>
                                 </a>
                             )}
 

@@ -349,7 +349,7 @@ export const SectionRenderer = ({
     };
 
     return (
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
+        <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-x-hidden">
             {sections.map(renderSection)}
 
             {/* Non-section overlays (always present) */}
