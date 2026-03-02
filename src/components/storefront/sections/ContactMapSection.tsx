@@ -8,7 +8,14 @@ interface ContactMapSectionProps {
 }
 
 export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
-    const { title, phones = [], whatsapp, email, address, mapsEmbedUrl, showMap = true } = config;
+    const { title, phones = [], whatsapp, email, address, showMap = true } = config;
+    let { mapsEmbedUrl } = config;
+
+    // If user pasted full <iframe> tag, extract just the src URL
+    if (mapsEmbedUrl && mapsEmbedUrl.includes("<iframe")) {
+        const match = mapsEmbedUrl.match(/src=["']([^"']+)["']/);
+        if (match) mapsEmbedUrl = match[1];
+    }
 
     const hasContactInfo = phones.length > 0 || whatsapp || email || address;
     if (!hasContactInfo && !mapsEmbedUrl) return null;
