@@ -21,7 +21,7 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
     if (!hasContactInfo && !mapsEmbedUrl) return null;
 
     return (
-        <section className="py-14 sm:py-20 px-6 bg-muted/20">
+        <section className="py-14 sm:py-20 px-4 sm:px-6 bg-muted/20 overflow-hidden">
             <div className="container mx-auto">
                 {title && (
                     <h3 className="text-2xl sm:text-3xl font-heading font-bold text-center mb-10">{title}</h3>
@@ -34,12 +34,12 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
                                 <a
                                     key={i}
                                     href={`tel:${phone.replace(/\D/g, "")}`}
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all group"
+                                    className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all group min-w-0 overflow-hidden"
                                 >
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                                         <Phone className="h-5 w-5 text-primary" />
                                     </div>
-                                    <span className="font-medium text-foreground">{phone}</span>
+                                    <span className="font-medium text-foreground truncate">{phone}</span>
                                 </a>
                             ))}
 
@@ -48,13 +48,13 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
                                     href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 hover:shadow-md transition-all group"
+                                    className="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 hover:shadow-md transition-all group min-w-0 overflow-hidden"
                                 >
-                                    <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center">
+                                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-emerald-500 flex items-center justify-center">
                                         <MessageCircle className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <span className="font-medium text-foreground block">{whatsapp}</span>
+                                        <span className="font-medium text-foreground block truncate">{whatsapp}</span>
                                         <span className="text-xs text-muted-foreground">WhatsApp</span>
                                     </div>
                                 </a>
@@ -63,12 +63,12 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
                             {email && (
                                 <a
                                     href={`mailto:${email}`}
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all group"
+                                    className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/50 hover:shadow-md transition-all group min-w-0 overflow-hidden"
                                 >
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                                         <Mail className="h-5 w-5 text-primary" />
                                     </div>
-                                    <span className="font-medium text-foreground">{email}</span>
+                                    <span className="font-medium text-foreground truncate min-w-0">{email}</span>
                                 </a>
                             )}
 
@@ -85,7 +85,7 @@ export const ContactMapSection = ({ config }: ContactMapSectionProps) => {
 
                     {/* Map */}
                     {showMap && mapsEmbedUrl && (
-                        <div className="w-full rounded-2xl overflow-hidden shadow-lg border border-border/50 aspect-[4/3]">
+                        <div className="w-full rounded-2xl overflow-hidden shadow-lg border border-border/50 aspect-square sm:aspect-[4/3]">
                             <iframe
                                 src={mapsEmbedUrl}
                                 title="Localização"
