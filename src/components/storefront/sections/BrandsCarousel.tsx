@@ -12,13 +12,13 @@ export const BrandsCarousel = ({ config }: BrandsCarouselProps) => {
     const speedMap = { slow: 0.5, normal: 1, fast: 2 };
     const animSpeed = speedMap[speed] || 1;
 
-    // Size classes based on logoSize setting
-    const sizeClasses = {
-        small: { container: "h-8 sm:h-10", img: "max-w-[100px]", gap: "gap-8 sm:gap-12" },
-        medium: { container: "h-12 sm:h-16", img: "max-w-[140px]", gap: "gap-10 sm:gap-16" },
-        large: { container: "h-16 sm:h-24", img: "max-w-[200px]", gap: "gap-12 sm:gap-20" },
+    // Inline styles for logo sizing (Tailwind purges dynamic classes)
+    const sizeStyles = {
+        small: { height: 40, maxWidth: 100, gap: 32 },
+        medium: { height: 64, maxWidth: 140, gap: 48 },
+        large: { height: 96, maxWidth: 200, gap: 64 },
     };
-    const sizes = sizeClasses[logoSize] || sizeClasses.medium;
+    const sz = sizeStyles[logoSize] || sizeStyles.medium;
 
     useEffect(() => {
         const el = scrollRef.current;
@@ -52,18 +52,20 @@ export const BrandsCarousel = ({ config }: BrandsCarouselProps) => {
                 )}
                 <div
                     ref={scrollRef}
-                    className={`flex items-center ${sizes.gap} overflow-hidden`}
-                    style={{ scrollBehavior: "auto" }}
+                    className="flex items-center overflow-hidden"
+                    style={{ scrollBehavior: "auto", gap: `${sz.gap}px` }}
                 >
                     {displayLogos.map((logo, i) => (
                         <div
                             key={`${logo.url}-${i}`}
-                            className={`flex-shrink-0 ${sizes.container} flex items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300`}
+                            className="flex-shrink-0 flex items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                            style={{ height: `${sz.height}px` }}
                         >
                             <img
                                 src={logo.url}
                                 alt={logo.name || `Marca ${i + 1}`}
-                                className={`h-full w-auto ${sizes.img} object-contain`}
+                                className="h-full w-auto object-contain"
+                                style={{ maxWidth: `${sz.maxWidth}px` }}
                             />
                         </div>
                     ))}
