@@ -216,6 +216,145 @@ const features = [
   { icon: Globe, title: "Domínio Próprio", desc: "Use seu domínio ou nosso subdomínio grátis" },
 ];
 
+
+// Hero Showcase with real product screenshots
+const heroScreenshots = [
+  { src: "/screenshot-vitrine.jpeg", label: "Vitrine", badge: "Sua loja online" },
+  { src: "/screenshot-gerencia.jpeg", label: "Gerenciar", badge: "Painel simples" },
+  { src: "/screenshot-produto.jpeg", label: "Produtos", badge: "Mais vendido" },
+  { src: "/screenshot-pedido.jpeg", label: "Pedidos", badge: "No WhatsApp" },
+  { src: "/screenshot-menu.jpeg", label: "Cardápio", badge: "Menu digital" },
+];
+
+const HeroShowcase = () => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTab((prev) => (prev + 1) % heroScreenshots.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative w-full">
+      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-3xl blur-3xl transform -rotate-2 scale-105" />
+      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-white/30 dark:border-gray-700/50 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-1 p-3 bg-gray-50/80 dark:bg-gray-800/80 border-b border-border/30">
+          <div className="flex gap-1.5 mr-3">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
+          </div>
+          <div className="flex gap-1 flex-1">
+            {heroScreenshots.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveTab(i)}
+                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  i === activeTab
+                    ? "bg-white dark:bg-gray-700 shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800" style={{ aspectRatio: "4/3" }}>
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={activeTab}
+              src={heroScreenshots[activeTab].src}
+              alt={heroScreenshots[activeTab].label}
+              className="w-full h-full object-cover object-top"
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.4 }}
+            />
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`badge-${activeTab}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="absolute bottom-4 left-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm font-semibold">{heroScreenshots[activeTab].badge}</span>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          <div className="absolute bottom-4 right-4 flex gap-1.5">
+            {heroScreenshots.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveTab(i)}
+                className={`transition-all duration-300 rounded-full ${
+                  i === activeTab ? "w-5 h-2 bg-orange-500" : "w-2 h-2 bg-white/60 hover:bg-white/90"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 dark:bg-gray-800/80 border-t border-border/30">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
+              <ShoppingBag className="h-3 w-3 text-white" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">agencia062.com/loja/suanome</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-green-600 font-medium">Online</span>
+          </div>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20, x: 20 }}
+        animate={{ opacity: 1, y: 0, x: 0 }}
+        transition={{ delay: 1.2 }}
+        className="absolute -right-5 top-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40 min-w-[150px]"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+            <Check className="h-4 w-4 text-green-600" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold">Novo pedido! 🎉</div>
+            <div className="text-xs text-muted-foreground">Agora mesmo</div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: -20, x: -20 }}
+        animate={{ opacity: 1, y: 0, x: 0 }}
+        transition={{ delay: 1.5 }}
+        className="absolute -left-5 bottom-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="h-4 w-4 text-orange-600" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold">+32% vendas</div>
+            <div className="text-xs text-muted-foreground">Este mês</div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
@@ -387,92 +526,14 @@ const Index = () => {
               </motion.div>
             </motion.div>
 
-            {/* Hero Visual */}
+            {/* Hero Visual - Product Screenshots */}
             <motion.div
-              initial={{ opacity: 0, x: 50, rotateY: -10 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="relative hidden lg:block"
             >
-              <div className="relative">
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/30 to-amber-500/30 rounded-3xl blur-2xl transform -rotate-3" />
-
-                {/* Main card - Glassmorphism */}
-                <div className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-gray-800/50 shadow-2xl p-8 transform hover:scale-[1.02] transition-transform duration-500">
-                  {/* Mock storefront header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center">
-                      <ShoppingBag className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-bold">Minha Loja Virtual</div>
-                      <div className="text-sm text-muted-foreground">@minhaloja</div>
-                    </div>
-                  </div>
-
-                  {/* Mock products grid */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    {[1, 2, 3, 4].map((i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 + i * 0.1 }}
-                        className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl aspect-square flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
-                      >
-                        <ShoppingBag className="h-8 w-8 text-muted-foreground/50" />
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Mock WhatsApp button */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 flex items-center justify-center gap-3 cursor-pointer shadow-lg shadow-green-500/30"
-                  >
-                    <MessageCircle className="h-6 w-6 text-white" />
-                    <span className="font-semibold text-white">Enviar orçamento via WhatsApp</span>
-                  </motion.div>
-                </div>
-
-                {/* Floating notification */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20, x: 20 }}
-                  animate={{ opacity: 1, y: 0, x: 0 }}
-                  transition={{ delay: 1.2 }}
-                  className="absolute -right-4 top-1/4 bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 border border-border/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <Check className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">Novo orçamento!</div>
-                      <div className="text-xs text-muted-foreground">Agora mesmo</div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Floating stats */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20, x: -20 }}
-                  animate={{ opacity: 1, y: 0, x: 0 }}
-                  transition={{ delay: 1.4 }}
-                  className="absolute -left-4 bottom-1/4 bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 border border-border/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">+32% vendas</div>
-                      <div className="text-xs text-muted-foreground">Este mês</div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
+              <HeroShowcase /></motion.div>
           </div>
         </div>
 
