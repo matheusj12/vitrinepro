@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
   Check,
   ShoppingBag,
@@ -22,7 +22,18 @@ import {
   Globe,
   Smartphone,
   Moon,
-  Sun
+  Sun,
+  ChevronDown,
+  Package,
+  QrCode,
+  Scissors,
+  Utensils,
+  Camera,
+  Shirt,
+  Flower2,
+  Wrench,
+  Clock,
+  FileText
 } from "lucide-react";
 
 // Animated counter component
@@ -63,10 +74,137 @@ const FloatingOrbs = () => (
 
 // Testimonial data
 const testimonials = [
-  { name: "Maria Santos", role: "Loja de Roupas", text: "Triplicamos nossas vendas em 2 meses!", avatar: "MS", rating: 5 },
-  { name: "João Silva", role: "Restaurante", text: "O melhor investimento para meu negócio.", avatar: "JS", rating: 5 },
-  { name: "Ana Costa", role: "Artesanato", text: "Simples, bonito e funciona perfeitamente!", avatar: "AC", rating: 5 },
+  {
+    name: "Maria Santos",
+    role: "Loja de Roupas",
+    text: "Triplicamos nossas vendas em 2 meses! Antes eu ficava enviando foto de produto um por um no WhatsApp. Agora só mando o link e os clientes fazem o pedido sozinhos.",
+    avatar: "MS",
+    rating: 5,
+    highlight: "+200% vendas"
+  },
+  {
+    name: "João Silva",
+    role: "Restaurante",
+    text: "O melhor investimento para meu negócio. Meu cardápio digital ficou lindo e os clientes adoram poder ver os pratos antes de pedir. O pedido chega organizado no WhatsApp!",
+    avatar: "JS",
+    rating: 5,
+    highlight: "Cardápio digital"
+  },
+  {
+    name: "Ana Costa",
+    role: "Artesanato",
+    text: "Simples, bonito e funciona perfeitamente! Consegui montar minha loja em menos de 30 minutos e no mesmo dia já recebi meu primeiro pedido pelo catálogo.",
+    avatar: "AC",
+    rating: 5,
+    highlight: "30 min para montar"
+  },
+  {
+    name: "Carlos Mendes",
+    role: "Barbearia",
+    text: "Meus clientes consultam o catálogo de serviços antes de vir. O atendimento ficou muito mais ágil e profissional. Recomendo para todo mundo!",
+    avatar: "CM",
+    rating: 5,
+    highlight: "Atendimento ágil"
+  },
+  {
+    name: "Fernanda Lima",
+    role: "Padaria e Confeitaria",
+    text: "Antes das festas recebo os pedidos pelo catálogo direto no WhatsApp com todos os detalhes organizados. Zerou o erro nos pedidos e aumentou minha produção.",
+    avatar: "FL",
+    rating: 5,
+    highlight: "Zero erros de pedido"
+  },
+  {
+    name: "Ricardo Souza",
+    role: "Distribuidora",
+    text: "Minha equipe de vendas agora envia o link do catálogo para os clientes e os pedidos chegam organizados. Economizamos horas por semana em digitação de pedidos.",
+    avatar: "RS",
+    rating: 5,
+    highlight: "Equipe de vendas"
+  },
 ];
+
+// FAQ data
+const faqs = [
+  {
+    question: "Preciso ter conhecimento técnico para criar minha loja?",
+    answer: "Não! O VitrinePro foi pensado para que qualquer pessoa possa criar sua vitrine digital em minutos, sem precisar saber programar ou ter conhecimento técnico. Basta cadastrar seus produtos e sua loja está pronta."
+  },
+  {
+    question: "Como funciona o período de teste gratuito?",
+    answer: "Você tem 7 dias para testar todas as funcionalidades do plano Pro sem pagar nada e sem precisar cadastrar cartão de crédito. Após o período, você escolhe o plano que melhor se encaixa no seu negócio."
+  },
+  {
+    question: "Como meus clientes fazem pedidos?",
+    answer: "Seus clientes acessam sua vitrine pelo link personalizado, navegam pelo catálogo, adicionam produtos ao carrinho e finalizam o pedido. Você recebe um resumo completo diretamente no seu WhatsApp, com nome do cliente, produtos e valores."
+  },
+  {
+    question: "Posso usar meu próprio domínio?",
+    answer: "Sim! No plano Pro você pode conectar seu domínio próprio (ex: www.sualoja.com.br). Nos planos menores, você recebe um subdomínio gratuito no formato sualoja.agencia062.com."
+  },
+  {
+    question: "É possível personalizar as cores e o visual da loja?",
+    answer: "Sim! Você pode personalizar cores, banners, seções e muito mais pelo painel de Aparência. No plano Pro, você tem acesso a temas premium e ainda mais opções de personalização para deixar sua vitrine com a cara da sua marca."
+  },
+  {
+    question: "Posso gerenciar o estoque pela plataforma?",
+    answer: "Sim! O VitrinePro conta com um módulo de gestão de estoque integrado. Você controla as quantidades disponíveis de cada produto e pode receber alertas quando o estoque estiver baixo."
+  },
+  {
+    question: "Funciona para qualquer tipo de negócio?",
+    answer: "Sim! O VitrinePro é ideal para lojas de roupas, restaurantes, padarias, barbearias, artesanato, distribuidoras, pet shops, e qualquer negócio que queira vender de forma digital e profissional."
+  },
+  {
+    question: "E se eu tiver dúvidas ou precisar de ajuda?",
+    answer: "Nosso suporte está disponível pelo WhatsApp e e-mail para ajudar você a tirar o máximo da plataforma. Clientes Pro têm prioridade no atendimento."
+  },
+];
+
+// Niches
+const niches = [
+  { icon: Shirt, label: "Moda e Roupas" },
+  { icon: Utensils, label: "Restaurantes" },
+  { icon: Scissors, label: "Barbearia e Salão" },
+  { icon: Flower2, label: "Floricultura" },
+  { icon: Camera, label: "Fotografia" },
+  { icon: Package, label: "Distribuidoras" },
+  { icon: Wrench, label: "Serviços Gerais" },
+  { icon: ShoppingBag, label: "Varejo em Geral" },
+];
+
+// FAQ Accordion Item
+const FAQItem = ({ faq, isOpen, onToggle }: { faq: { question: string; answer: string }; isOpen: boolean; onToggle: () => void }) => (
+  <div className="border border-border/50 rounded-xl overflow-hidden">
+    <button
+      className="w-full flex items-center justify-between p-6 text-left hover:bg-secondary/50 transition-colors"
+      onClick={onToggle}
+    >
+      <span className="font-semibold pr-4">{faq.question}</span>
+      <motion.div
+        animate={{ rotate: isOpen ? 180 : 0 }}
+        transition={{ duration: 0.2 }}
+        className="flex-shrink-0"
+      >
+        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+      </motion.div>
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden"
+        >
+          <div className="px-6 pb-6 text-muted-foreground">
+            {faq.answer}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
 
 // Feature cards data
 const features = [
@@ -221,7 +359,7 @@ const Index = () => {
                     variant="outline"
                     size="lg"
                     className="font-semibold text-lg px-8 py-6 border-2 group"
-                    onClick={() => navigate("/auth")}
+                    onClick={() => window.open("https://www.agencia062.com/loja/matheus", "_blank")}
                   >
                     <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                     Ver demonstração
@@ -353,22 +491,27 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Social Proof - Logos Carousel */}
-      <section className="py-12 border-y border-border/50 bg-secondary/30">
+      {/* Social Proof - Niches */}
+      <section className="py-16 border-y border-border/50 bg-secondary/30">
         <div className="container mx-auto px-4">
-          <p className="text-center text-muted-foreground mb-8">
-            Mais de <span className="font-semibold text-foreground">5.000 lojas</span> já confiam no VitrinePro
+          <p className="text-center text-muted-foreground mb-10">
+            Mais de <span className="font-semibold text-foreground">5.000 lojas</span> de todos os segmentos já usam o VitrinePro
           </p>
-          <div className="flex items-center justify-center gap-12 flex-wrap opacity-50">
-            {["Loja A", "Loja B", "Loja C", "Loja D", "Loja E"].map((logo, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+            {niches.map((niche, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="text-xl font-bold text-muted-foreground"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ y: -4, scale: 1.05 }}
+                className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-background hover:shadow-md transition-all duration-300 cursor-default group"
               >
-                {logo}
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center group-hover:from-orange-500/20 group-hover:to-amber-500/20 transition-colors">
+                  <niche.icon className="h-6 w-6 text-orange-600" />
+                </div>
+                <span className="text-xs font-medium text-center text-muted-foreground group-hover:text-foreground transition-colors">{niche.label}</span>
               </motion.div>
             ))}
           </div>
@@ -442,6 +585,105 @@ const Index = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-24 bg-gradient-to-b from-background to-secondary/20 relative">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
+              <Zap className="h-4 w-4" />
+              Simples e rápido
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
+              Pronto em <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">menos de 5 minutos</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Sem conhecimento técnico, sem complicação. Siga os 3 passos e sua vitrine digital estará no ar.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-orange-500/50 to-amber-500/50 z-0" />
+
+            {[
+              {
+                step: "01",
+                icon: ShoppingBag,
+                title: "Cadastre seus produtos",
+                desc: "Adicione fotos, descrições, preços e categorias dos seus produtos em poucos cliques. Nossa interface é intuitiva e fácil.",
+                color: "from-orange-500 to-amber-500"
+              },
+              {
+                step: "02",
+                icon: Palette,
+                title: "Personalize sua vitrine",
+                desc: "Escolha cores, adicione seu logo e banners. Deixe sua loja com a identidade visual da sua marca em minutos.",
+                color: "from-amber-500 to-yellow-500"
+              },
+              {
+                step: "03",
+                icon: MessageCircle,
+                title: "Receba pedidos no WhatsApp",
+                desc: "Compartilhe o link da sua vitrine. Seus clientes fazem pedidos e você recebe tudo organizado diretamente no WhatsApp.",
+                color: "from-green-500 to-emerald-500"
+              },
+            ].map((step, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.15 }}
+                className="relative z-10 flex flex-col items-center text-center"
+              >
+                <div className="relative mb-6">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${step.color} rounded-2xl blur-lg opacity-40`} />
+                  <div className={`relative w-20 h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-xl`}>
+                    <step.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-background border-2 border-orange-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-orange-600">{step.step}</span>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA below steps */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-16"
+          >
+            <div className="inline-flex items-center gap-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl px-8 py-4 mb-8">
+              <Clock className="h-5 w-5 text-green-600" />
+              <span className="text-green-700 dark:text-green-400 font-medium">Tempo médio para criar sua vitrine: <strong>4 minutos e 32 segundos</strong></span>
+            </div>
+            <div className="block">
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-block">
+                <Button
+                  onClick={() => navigate("/auth")}
+                  size="lg"
+                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold text-lg px-8 py-6 shadow-xl shadow-green-500/30 group"
+                >
+                  Criar minha vitrine agora
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </motion.div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -569,37 +811,45 @@ const Index = () => {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-sm font-medium text-green-600 dark:text-green-400 mb-4">
               <Star className="h-4 w-4 fill-current" />
-              Avaliações 5 estrelas
+              Mais de 500 avaliações 5 estrelas
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              O que nossos clientes dizem
+              Quem usa, <span className="bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">aprova</span>
             </h2>
+            <p className="text-lg text-muted-foreground">Resultados reais de lojistas que transformaram seus negócios</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((testimonial, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: idx * 0.08 }}
+                whileHover={{ y: -4 }}
               >
-                <Card className="h-full hover:shadow-xl transition-all duration-300 group">
+                <Card className="h-full hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gradient-to-bl from-orange-500/10 to-transparent w-24 h-24 rounded-bl-3xl" />
                   <CardContent className="p-6">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-yellow-500 fill-current" />
-                      ))}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex gap-1">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
+                        ))}
+                      </div>
+                      <span className="text-xs font-semibold bg-gradient-to-r from-orange-500/10 to-amber-500/10 text-orange-600 border border-orange-500/20 px-2 py-1 rounded-full">
+                        {testimonial.highlight}
+                      </span>
                     </div>
-                    <p className="text-lg mb-6 italic">"{testimonial.text}"</p>
+                    <p className="text-sm leading-relaxed mb-6 text-muted-foreground italic">"{testimonial.text}"</p>
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold text-sm">
                         {testimonial.avatar}
                       </div>
                       <div>
-                        <div className="font-semibold">{testimonial.name}</div>
-                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                        <div className="font-semibold text-sm">{testimonial.name}</div>
+                        <div className="text-xs text-muted-foreground">{testimonial.role}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -745,6 +995,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <FAQSection navigate={navigate} />
+
       {/* Final CTA */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black" />
@@ -784,23 +1037,165 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border bg-background">
+      <footer className="pt-16 pb-8 border-t border-border bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-2 rounded-xl">
-                <ShoppingBag className="h-5 w-5 text-white" />
+          <div className="grid md:grid-cols-4 gap-10 mb-12">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl blur-sm opacity-50" />
+                  <div className="relative bg-gradient-to-r from-orange-500 to-amber-500 p-2 rounded-xl">
+                    <ShoppingBag className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <span className="font-bold text-lg bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">VitrinePro</span>
               </div>
-              <span className="font-bold text-lg">VitrinePro</span>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A plataforma de vitrine digital para empreendedores brasileiros venderem mais pelo WhatsApp.
+              </p>
             </div>
-            <div className="text-sm text-muted-foreground text-center md:text-right">
-              <p>© 2025 VitrinePro. Todos os direitos reservados.</p>
-              <p className="mt-1">Feito com 🧡 para empreendedores brasileiros</p>
+
+            {/* Product */}
+            <div>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Produto</h4>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { label: "Funcionalidades", href: "#" },
+                  { label: "Planos e Preços", href: "#" },
+                  { label: "Ver demonstração", href: "/auth" },
+                  { label: "Criar minha loja", href: "/auth" },
+                ].map((link, i) => (
+                  <li key={i}>
+                    <a
+                      href={link.href}
+                      className="text-muted-foreground hover:text-foreground transition-colors hover:text-orange-600"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Empresa</h4>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { label: "Sobre nós", href: "/sobre" },
+                  { label: "Blog", href: "#" },
+                  { label: "Contato", href: "/contato" },
+                ].map((link, i) => (
+                  <li key={i}>
+                    <a
+                      href={link.href}
+                      className="text-muted-foreground hover:text-foreground transition-colors hover:text-orange-600"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Legal</h4>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { label: "Termos de Uso", href: "/termos" },
+                  { label: "Política de Privacidade", href: "/privacidade" },
+                ].map((link, i) => (
+                  <li key={i}>
+                    <a
+                      href={link.href}
+                      className="text-muted-foreground hover:text-foreground transition-colors hover:text-orange-600"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              © 2025 VitrinePro. Todos os direitos reservados.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Feito com 🧡 para empreendedores brasileiros
+            </p>
           </div>
         </div>
       </footer>
     </div>
+  );
+};
+
+// FAQ Section Component
+const FAQSection = ({ navigate }: { navigate: (path: string) => void }) => {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  return (
+    <section className="py-24 bg-gradient-to-b from-secondary/30 to-background">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
+            <FileText className="h-4 w-4" />
+            Dúvidas frequentes
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Perguntas <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">frequentes</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Respondemos as principais dúvidas sobre o VitrinePro
+          </p>
+        </motion.div>
+
+        <div className="max-w-3xl mx-auto space-y-3">
+          {faqs.map((faq, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <FAQItem
+                faq={faq}
+                isOpen={openIdx === idx}
+                onToggle={() => setOpenIdx(openIdx === idx ? null : idx)}
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mt-12"
+        >
+          <p className="text-muted-foreground mb-4">Ainda tem dúvidas?</p>
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-2 border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/5"
+            onClick={() => navigate("/auth")}
+          >
+            <MessageCircle className="mr-2 h-5 w-5 text-green-600" />
+            Falar com o suporte
+          </Button>
+        </motion.div>
+      </div>
+    </section>
   );
 };
 
