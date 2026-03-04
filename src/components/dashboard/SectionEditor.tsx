@@ -1,22 +1,34 @@
 import React, { useState } from "react";
-import { PageSection, SectionType } from "@/types/sections";
+import {
+    PageSection,
+    SectionConfigMap,
+    TestimonialItem,
+    FAQItem,
+    StatsItem,
+    BrandLogo,
+} from "@/types/sections";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 
+/** Config mutável durante edição de formulário — permite acesso por string key */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EditableConfig = Record<string, any>;
+
 interface SectionEditorProps {
     section: PageSection;
-    onSave: (config: any) => void;
+    /** Recebe o config final tipado antes de salvar */
+    onSave: (config: EditableConfig) => void;
     onCancel: () => void;
 }
 
 export const SectionEditor = ({ section, onSave, onCancel }: SectionEditorProps) => {
-    const [config, setConfig] = useState<any>({ ...section.config });
+    const [config, setConfig] = useState<EditableConfig>({ ...(section.config as EditableConfig) });
 
-    const update = (key: string, value: any) => {
-        setConfig((prev: any) => ({ ...prev, [key]: value }));
+    const update = (key: string, value: unknown) => {
+        setConfig((prev) => ({ ...prev, [key]: value }));
     };
 
     const renderFields = () => {
@@ -108,7 +120,7 @@ export const SectionEditor = ({ section, onSave, onCancel }: SectionEditorProps)
                         />
                         <ArrayField
                             label="Logos (URLs das imagens)"
-                            items={(config.logos || []).map((l: any) => (typeof l === "string" ? l : l.url))}
+                            items={((config.logos as BrandLogo[] | undefined) || []).map((l) => (typeof l === "string" ? l : l.url))}
                             onUpdate={(items) => update("logos", items.map((url) => ({ url, name: "" })))}
                         />
                     </>
@@ -340,7 +352,7 @@ const ArrayField = ({ label, items, onUpdate }: { label: string; items: string[]
 
 // ---- Complex Sub-Editors ----
 
-const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => (
+const TestimonialsEditor = ({ items, onUpdate }: { items: TestimonialItem[]; onUpdate: (items: TestimonialItem[]) => void }) => (
     <div className="space-y-3">
         <Label className="text-sm font-medium">Depoimentos</Label>
         {items.map((item, i) => (
@@ -372,7 +384,7 @@ const TestimonialsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (item
     </div>
 );
 
-const FAQEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => (
+const FAQEditor = ({ items, onUpdate }: { items: FAQItem[]; onUpdate: (items: FAQItem[]) => void }) => (
     <div className="space-y-3">
         <Label className="text-sm font-medium">Perguntas</Label>
         {items.map((item, i) => (
@@ -393,7 +405,7 @@ const FAQEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[])
     </div>
 );
 
-const StatsEditor = ({ items, onUpdate }: { items: any[]; onUpdate: (items: any[]) => void }) => (
+const StatsEditor = ({ items, onUpdate }: { items: StatsItem[]; onUpdate: (items: StatsItem[]) => void }) => (
     <div className="space-y-3">
         <Label className="text-sm font-medium">Estatísticas</Label>
         {items.map((item, i) => (

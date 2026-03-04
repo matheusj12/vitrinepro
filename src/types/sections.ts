@@ -1,6 +1,11 @@
 // ============================================================
 // Page Builder — Section Types
 // ============================================================
+// Skill aplicada: typescript-advanced-types
+// Padrões: Discriminated Unions, Type Guards, Mapped Types, Utility Types
+// ============================================================
+
+// ---- Tipos literais de seção ----
 
 /** All available section types */
 export type SectionType =
@@ -24,35 +29,16 @@ export type SectionType =
     | 'footer'
     | 'bottom_nav';
 
-/** A single section in the page layout */
-export interface PageSection {
-    id: string;
-    type: SectionType;
-    /** If true, section cannot be removed or hidden (header, product_grid, footer) */
-    locked?: boolean;
-    /** Whether the section is visible */
-    visible: boolean;
-    /** Section-specific configuration */
-    config: SectionConfig;
-}
+/** Seções que não têm configuração própria (config vazio) */
+export type EmptySectionType =
+    | 'product_stories'
+    | 'product_reels'
+    | 'categories_scroll'
+    | 'footer'
+    | 'bottom_nav';
 
-/** Union of all section configs */
-export type SectionConfig =
-    | HeaderSectionConfig
-    | HeroBannerConfig
-    | ProductGridConfig
-    | FeaturedProductsConfig
-    | CTAConfig
-    | ImageTextConfig
-    | BrandsCarouselConfig
-    | TestimonialsConfig
-    | StatsCounterConfig
-    | VideoEmbedConfig
-    | FAQConfig
-    | NewsletterConfig
-    | ContactMapConfig
-    | SpacerConfig
-    | Record<string, any>; // fallback
+/** Seções que não podem ser removidas ou ocultadas */
+export type LockedSectionType = 'header' | 'product_grid' | 'footer' | 'bottom_nav';
 
 // ---- Individual Section Configs ----
 
@@ -104,32 +90,41 @@ export interface ImageTextConfig {
     bgColor?: string;
 }
 
+export interface BrandLogo {
+    url: string;
+    name?: string;
+}
+
 export interface BrandsCarouselConfig {
     title?: string;
-    logos: Array<{ url: string; name?: string }>;
+    logos: BrandLogo[];
     speed?: 'slow' | 'normal' | 'fast';
     logoSize?: 'small' | 'medium' | 'large';
 }
 
+export interface TestimonialItem {
+    name: string;
+    text: string;
+    rating?: number;
+    avatarUrl?: string;
+    role?: string;
+}
+
 export interface TestimonialsConfig {
     title?: string;
-    items: Array<{
-        name: string;
-        text: string;
-        rating?: number;
-        avatarUrl?: string;
-        role?: string;
-    }>;
+    items: TestimonialItem[];
     layout?: 'cards' | 'carousel';
 }
 
+export interface StatsItem {
+    value: string;
+    label: string;
+    prefix?: string;
+    suffix?: string;
+}
+
 export interface StatsCounterConfig {
-    items: Array<{
-        value: string;
-        label: string;
-        prefix?: string;
-        suffix?: string;
-    }>;
+    items: StatsItem[];
     bgColor?: string;
 }
 
@@ -140,12 +135,14 @@ export interface VideoEmbedConfig {
     autoplay?: boolean;
 }
 
+export interface FAQItem {
+    question: string;
+    answer: string;
+}
+
 export interface FAQConfig {
     title?: string;
-    items: Array<{
-        question: string;
-        answer: string;
-    }>;
+    items: FAQItem[];
 }
 
 export interface NewsletterConfig {
@@ -170,28 +167,118 @@ export interface SpacerConfig {
     showDivider?: boolean;
 }
 
+/** Configuração vazia para seções sem opções */
+export type EmptySectionConfig = Record<string, never>;
+
+// ---- Discriminated Union: SectionType → Config ----
+// Mapeia cada SectionType ao seu config específico — sem `Record<string, any>`
+
+export type SectionConfigMap = {
+    header: HeaderSectionConfig;
+    hero_banner: HeroBannerConfig;
+    product_stories: EmptySectionConfig;
+    product_reels: EmptySectionConfig;
+    categories_scroll: EmptySectionConfig;
+    product_grid: ProductGridConfig;
+    featured_products: FeaturedProductsConfig;
+    cta: CTAConfig;
+    image_text: ImageTextConfig;
+    brands_carousel: BrandsCarouselConfig;
+    testimonials: TestimonialsConfig;
+    stats_counter: StatsCounterConfig;
+    video_embed: VideoEmbedConfig;
+    faq: FAQConfig;
+    newsletter: NewsletterConfig;
+    contact_map: ContactMapConfig;
+    spacer: SpacerConfig;
+    footer: EmptySectionConfig;
+    bottom_nav: EmptySectionConfig;
+};
+
+/** Config de uma seção específica — totalmente tipado */
+export type SectionConfig<T extends SectionType = SectionType> = SectionConfigMap[T];
+
+// ---- Discriminated Union: PageSection ----
+
+/**
+ * Typed page section: a union onde cada membro tem `type` literal
+ * e `config` inferido automaticamente para aquele tipo.
+ */
+export type PageSection = {
+    [T in SectionType]: {
+        id: string;
+        type: T;
+        /** Se true, seção não pode ser removida ou ocultada */
+        locked?: T extends LockedSectionType ? true : boolean;
+        visible: boolean;
+        config: SectionConfigMap[T];
+    };
+}[SectionType];
+
 /** Full page layout stored in store_settings.page_sections */
 export interface PageLayout {
     sections: PageSection[];
 }
 
-// ---- Section Catalog (for the builder UI) ----
+// ---- Type Guards ----
 
-export interface SectionCatalogItem {
-    type: SectionType;
-    label: string;
-    description: string;
-    icon: string; // lucide icon name
-    locked?: boolean;
-    defaultConfig: SectionConfig;
+/** Verifica se uma seção é do tipo especificado (com narrowing automático) */
+export function isSectionType<T extends SectionType>(
+    section: PageSection,
+    type: T,
+): section is Extract<PageSection, { type: T }> {
+    return section.type === type;
 }
 
-/** Generates a unique section ID */
-export const generateSectionId = (): string => {
-    return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+/** Verifica se uma seção está bloqueada */
+export function isLockedSection(
+    section: PageSection,
+): section is Extract<PageSection, { type: LockedSectionType }> {
+    const locked: readonly SectionType[] = ['header', 'product_grid', 'footer', 'bottom_nav'];
+    return locked.includes(section.type);
+}
+
+/** Extrai o config tipado de uma seção */
+export function getSectionConfig<T extends SectionType>(
+    section: Extract<PageSection, { type: T }>,
+): SectionConfigMap[T] {
+    return section.config as SectionConfigMap[T];
+}
+
+// ---- Utility Types ----
+
+/** Seção com update parcial do config (para formulários de edição) */
+export type PageSectionUpdate<T extends SectionType = SectionType> = {
+    type: T;
+    visible?: boolean;
+    config?: Partial<SectionConfigMap[T]>;
 };
 
-/** Default page layout when none is configured */
+/** Seção sem `id` (para criar novas seções) */
+export type NewPageSection<T extends SectionType = SectionType> = Omit<
+    Extract<PageSection, { type: T }>,
+    'id'
+>;
+
+// ---- Section Catalog ----
+
+export interface SectionCatalogItem<T extends SectionType = SectionType> {
+    type: T;
+    label: string;
+    description: string;
+    /** Nome do ícone Lucide */
+    icon: string;
+    locked?: boolean;
+    defaultConfig: SectionConfigMap[T];
+}
+
+// ---- Helpers ----
+
+/** Gera um ID único para uma seção */
+export const generateSectionId = (): string =>
+    Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+
+/** Default page layout quando nenhum está configurado */
 export const DEFAULT_PAGE_LAYOUT: PageLayout = {
     sections: [
         { id: 'header', type: 'header', locked: true, visible: true, config: { style: 'solid', showSocials: true } },
@@ -205,91 +292,91 @@ export const DEFAULT_PAGE_LAYOUT: PageLayout = {
     ],
 };
 
-/** Section catalog for the builder "Add Section" panel */
+/** Catálogo de seções disponíveis para o Page Builder */
 export const SECTION_CATALOG: SectionCatalogItem[] = [
     {
         type: 'cta',
         label: 'Call to Action',
         description: 'Bloco com imagem, texto e botão de ação',
         icon: 'MousePointerClick',
-        defaultConfig: { title: 'Título do CTA', subtitle: 'Subtítulo', buttonText: 'Saiba Mais', layout: 'image-right' } as CTAConfig,
+        defaultConfig: { title: 'Título do CTA', subtitle: 'Subtítulo', buttonText: 'Saiba Mais', layout: 'image-right' },
     },
     {
         type: 'brands_carousel',
         label: 'Carrossel de Marcas',
         description: 'Logos de marcas parceiras em carrossel',
         icon: 'Award',
-        defaultConfig: { title: 'Nossas Marcas', logos: [], speed: 'normal' } as BrandsCarouselConfig,
+        defaultConfig: { title: 'Nossas Marcas', logos: [], speed: 'normal' },
     },
     {
         type: 'testimonials',
         label: 'Depoimentos',
         description: 'Avaliações e depoimentos de clientes',
         icon: 'MessageSquareQuote',
-        defaultConfig: { title: 'O que nossos clientes dizem', items: [], layout: 'cards' } as TestimonialsConfig,
+        defaultConfig: { title: 'O que nossos clientes dizem', items: [], layout: 'cards' },
     },
     {
         type: 'newsletter',
         label: 'Newsletter',
         description: 'Captura de e-mail para promoções',
         icon: 'Mail',
-        defaultConfig: { title: 'Cadastre-se em nossa newsletter', buttonText: 'Cadastrar' } as NewsletterConfig,
+        defaultConfig: { title: 'Cadastre-se em nossa newsletter', buttonText: 'Cadastrar' },
     },
     {
         type: 'image_text',
         label: 'Imagem + Texto',
         description: 'Bloco editorial com imagem e texto lado a lado',
         icon: 'LayoutPanelLeft',
-        defaultConfig: { title: 'Sobre nós', text: 'Escreva sobre seu negócio...', layout: 'image-left' } as ImageTextConfig,
+        defaultConfig: { title: 'Sobre nós', text: 'Escreva sobre seu negócio...', layout: 'image-left' },
     },
     {
         type: 'featured_products',
         label: 'Produtos em Destaque',
         description: 'Grid de produtos marcados como destaque',
         icon: 'Star',
-        defaultConfig: { title: 'Destaques', maxItems: 8, layout: 'grid' } as FeaturedProductsConfig,
+        defaultConfig: { title: 'Destaques', maxItems: 8, layout: 'grid' },
     },
     {
         type: 'video_embed',
         label: 'Vídeo',
         description: 'Incorporar vídeo do YouTube ou Vimeo',
         icon: 'Play',
-        defaultConfig: { title: '', videoUrl: '', provider: 'youtube' } as VideoEmbedConfig,
+        defaultConfig: { title: '', videoUrl: '', provider: 'youtube' },
     },
     {
         type: 'faq',
         label: 'Perguntas Frequentes',
         description: 'FAQ em formato accordion',
         icon: 'HelpCircle',
-        defaultConfig: { title: 'Perguntas Frequentes', items: [] } as FAQConfig,
+        defaultConfig: { title: 'Perguntas Frequentes', items: [] },
     },
     {
         type: 'stats_counter',
         label: 'Contador de Estatísticas',
         description: 'Números animados (ex: +500 clientes)',
         icon: 'TrendingUp',
-        defaultConfig: { items: [{ value: '500', label: 'Clientes', prefix: '+' }] } as StatsCounterConfig,
+        defaultConfig: { items: [{ value: '500', label: 'Clientes', prefix: '+' }] },
     },
     {
         type: 'contact_map',
         label: 'Contato / Mapa',
         description: 'Informações de contato e Google Maps',
         icon: 'MapPin',
-        defaultConfig: { title: 'Fale Conosco', showMap: true } as ContactMapConfig,
+        defaultConfig: { title: 'Fale Conosco', showMap: true },
     },
     {
         type: 'spacer',
         label: 'Espaçador',
         description: 'Espaço ou divisor entre seções',
         icon: 'SeparatorHorizontal',
-        defaultConfig: { height: 'medium', showDivider: false } as SpacerConfig,
+        defaultConfig: { height: 'medium', showDivider: false },
     },
     {
         type: 'hero_banner',
         label: 'Banner Hero',
         description: 'Carrossel de banners com overlay',
         icon: 'Image',
-        defaultConfig: { height: 'medium' } as HeroBannerConfig,
+        defaultConfig: { height: 'medium' },
     },
     {
         type: 'categories_scroll',
