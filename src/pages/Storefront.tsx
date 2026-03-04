@@ -65,6 +65,59 @@ const Storefront = () => {
     };
   }, [storeSettings]);
 
+  // SEO: title e meta tags dinâmicas por tenant
+  useEffect(() => {
+    if (!tenant) return;
+
+    const storeName = tenant.company_name || "Vitrine Online";
+    const branding = (storeSettings as any)?.branding || {};
+    const description = branding.store_description ||
+      `Confira os produtos de ${storeName}. Catálogo online completo com os melhores preços.`;
+    const logoUrl = branding.logo_url || "";
+
+    // Title
+    const previousTitle = document.title;
+    document.title = storeName;
+
+    // Meta description
+    let descEl = document.querySelector("meta[name='description']") as HTMLMetaElement | null;
+    if (!descEl) {
+      descEl = document.createElement("meta");
+      descEl.name = "description";
+      document.head.appendChild(descEl);
+    }
+    const previousDesc = descEl.content;
+    descEl.content = description;
+
+    // Open Graph
+    const ogTags: Record<string, string> = {
+      "og:title": storeName,
+      "og:description": description,
+      "og:type": "website",
+      "og:image": logoUrl,
+    };
+    const previousOg: Record<string, string> = {};
+    Object.entries(ogTags).forEach(([prop, content]) => {
+      let el = document.querySelector(`meta[property='${prop}']`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("property", prop);
+        document.head.appendChild(el);
+      }
+      previousOg[prop] = el.content;
+      el.content = content;
+    });
+
+    return () => {
+      document.title = previousTitle;
+      if (descEl) descEl.content = previousDesc;
+      Object.entries(previousOg).forEach(([prop, content]) => {
+        const el = document.querySelector(`meta[property='${prop}']`) as HTMLMetaElement | null;
+        if (el) el.content = content;
+      });
+    };
+  }, [tenant, storeSettings]);
+
   // Open Graph dinâmico e Analytics (omitido para brevidade, mas idealmente deveria estar aqui ou em hook)
   // ... mantendo analytics básico ...
   useEffect(() => {

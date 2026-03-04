@@ -30,13 +30,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
   Package,
-  TrendingUp,
+  MessageCircle,
   ShoppingCart,
   Eye,
   Menu,
   Sun,
   Moon,
   Copy,
+  Share2,
   ExternalLink
 } from "lucide-react";
 
@@ -60,7 +61,7 @@ const Dashboard = () => {
   const [statsData, setStatsData] = useState({
     visits: 0,
     quotes: 0,
-    conversion: "0%",
+    whatsappClicks: 0,
     activeProducts: 0
   });
 
@@ -106,8 +107,12 @@ const Dashboard = () => {
     if (!tenantId) return;
 
     const fetchStats = async () => {
-      // 1. Produtos Ativos
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
       try {
+        // 1. Produtos Ativos
         const { count: productsCount } = await supabase
           .from("products")
           .select("*", { count: "exact", head: true })
@@ -124,22 +129,34 @@ const Dashboard = () => {
           quotesCount = count || 0;
         } catch (e) { }
 
-        // 3. Simulação de Visitas (Placeholder)
+        // 3. Visitas reais dos últimos 7 dias (tabela analytics_events)
         let visitsCount = 0;
         try {
           const { count } = await supabase
-            .from("page_views")
+            .from("analytics_events")
             .select("*", { count: "exact", head: true })
-            .eq("tenant_id", tenantId);
+            .eq("tenant_id", tenantId)
+            .eq("event_type", "page_view")
+            .gte("created_at", sevenDaysAgoISO);
           visitsCount = count || 0;
         } catch (e) { }
 
-        const conversionRate = visitsCount > 0 ? ((quotesCount / visitsCount) * 100).toFixed(1) + "%" : "0%";
+        // 4. Cliques no WhatsApp dos últimos 7 dias
+        let whatsappCount = 0;
+        try {
+          const { count } = await supabase
+            .from("analytics_events")
+            .select("*", { count: "exact", head: true })
+            .eq("tenant_id", tenantId)
+            .eq("event_type", "whatsapp_click")
+            .gte("created_at", sevenDaysAgoISO);
+          whatsappCount = count || 0;
+        } catch (e) { }
 
         setStatsData({
           visits: visitsCount,
           quotes: quotesCount,
-          conversion: conversionRate,
+          whatsappClicks: whatsappCount,
           activeProducts: productsCount || 0
         });
       } catch (err) {
@@ -176,6 +193,19 @@ const Dashboard = () => {
   const handleCopyLink = async () => {
     if (!tenantData?.tenant) return;
     const url = `${window.location.origin}/loja/${tenantData.tenant.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: tenantData.tenant.company_name,
+          text: `Confira a vitrine: ${tenantData.tenant.company_name}`,
+          url,
+        });
+        return;
+      } catch (e) {
+        // Usuário cancelou o share — não faz nada
+        return;
+      }
+    }
     await navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success("Link copiado!");
@@ -283,10 +313,10 @@ const Dashboard = () => {
   const storeUrl = `/loja/${tenant.slug}`;
 
   const stats = [
-    { label: "Visitas Hoje", value: statsData.visits.toString(), icon: Eye, change: "", positive: true },
-    { label: "Orçamentos", value: statsData.quotes.toString(), icon: ShoppingCart, change: "", positive: true },
-    { label: "Conversão", value: statsData.conversion, icon: TrendingUp, change: "", positive: true },
-    { label: "Produtos Ativos", value: statsData.activeProducts.toString(), icon: Package, change: "", positive: true },
+    { label: "Visitas (7 dias)", value: statsData.visits.toLocaleString("pt-BR"), icon: Eye, change: "", positive: true },
+    { label: "Cliques WhatsApp", value: statsData.whatsappClicks.toLocaleString("pt-BR"), icon: MessageCircle, change: "", positive: true },
+    { label: "Orçamentos", value: statsData.quotes.toLocaleString("pt-BR"), icon: ShoppingCart, change: "", positive: true },
+    { label: "Produtos Ativos", value: statsData.activeProducts.toLocaleString("pt-BR"), icon: Package, change: "", positive: true },
   ];
 
   const getPageTitle = (tab: string) => {
@@ -387,8 +417,12 @@ const Dashboard = () => {
                     className="gap-2 rounded-full border-primary/20 hover:border-primary/50 hover:bg-primary/5"
                     onClick={handleCopyLink}
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    {copied ? "Copiado!" : "Copiar Link"}
+                    {navigator.share ? (
+                      <Share2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copied ? "Copiado!" : navigator.share ? "Compartilhar" : "Copiar Link"}
                   </Button>
                   <Button
                     size="sm"
