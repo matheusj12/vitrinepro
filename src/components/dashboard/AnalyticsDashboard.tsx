@@ -2,16 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Eye, ShoppingBag, MessageCircle, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import { Loader2, Eye, ShoppingBag, MessageCircle, FileText, TrendingUp, AlertCircle, Zap } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface AnalyticsDashboardProps {
   tenantId: string;
 }
 
 const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
-  const [period, setPeriod] = useState<7 | 30>(7);
+  const [period, setPeriod] = useState<7 | 30 | 90>(7);
 
   // Calcular data de início
   const startDate = new Date();
@@ -23,7 +24,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
-          body: { 
+          body: {
             type: "views",
             startDate: startDate.toISOString(),
           },
@@ -46,7 +47,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
-          body: { 
+          body: {
             type: "products",
             startDate: startDate.toISOString(),
           },
@@ -69,7 +70,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
-          body: { 
+          body: {
             type: "whatsapp",
             startDate: startDate.toISOString(),
           },
@@ -92,7 +93,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
-          body: { 
+          body: {
             type: "quotes",
             startDate: startDate.toISOString(),
           },
@@ -109,7 +110,38 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
     },
   });
 
-  // Eventos recentes para debug
+  // Visitas por dia (para gráfico)
+  const { data: dailyViewsData = [] } = useQuery({
+    queryKey: ["analytics-daily", tenantId, period],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("analytics_events")
+          .select("event_type, created_at")
+          .eq("tenant_id", tenantId)
+          .gte("created_at", startDate.toISOString())
+          .order("created_at", { ascending: true });
+
+        if (error || !data) return [];
+
+        // Agrupa por dia
+        const byDay: Record<string, { visitas: number; produtos: number; whatsapp: number }> = {};
+        data.forEach((e) => {
+          const day = new Date(e.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+          if (!byDay[day]) byDay[day] = { visitas: 0, produtos: 0, whatsapp: 0 };
+          if (e.event_type === "page_view") byDay[day].visitas++;
+          if (e.event_type === "product_view") byDay[day].produtos++;
+          if (e.event_type === "whatsapp_click") byDay[day].whatsapp++;
+        });
+
+        return Object.entries(byDay).map(([dia, vals]) => ({ dia, ...vals }));
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  // Eventos recentes
   const { data: recentEvents = [] } = useQuery({
     queryKey: ["analytics-events", tenantId],
     queryFn: async () => {
@@ -120,13 +152,9 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
           .eq("tenant_id", tenantId)
           .order("created_at", { ascending: false })
           .limit(10);
-        if (error) {
-          console.error("Erro ao buscar eventos:", error);
-          return [];
-        }
+        if (error) return [];
         return data || [];
-      } catch (err) {
-        console.error("Exceção ao buscar eventos:", err);
+      } catch {
         return [];
       }
     },
@@ -146,6 +174,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   const whatsappClicks = safeWhatsappData.total_whatsapp_clicks || 0;
   const totalQuotes = safeQuotesData.total_quotes || 0;
   const topProducts = safeProductsData.top_products || [];
+  const conversionRate = totalViews > 0 ? (((whatsappClicks + totalQuotes) / totalViews) * 100).toFixed(1) : "0";
 
   const hasNoData = totalViews === 0 && totalProductViews === 0 && whatsappClicks === 0 && totalQuotes === 0;
 
@@ -168,24 +197,19 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant={period === 7 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPeriod(7)}
-          >
-            7 dias
-          </Button>
-          <Button
-            variant={period === 30 ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPeriod(30)}
-          >
-            30 dias
-          </Button>
+          {([7, 30, 90] as const).map((p) => (
+            <Button
+              key={p}
+              variant={period === p ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPeriod(p)}
+            >
+              {p} dias
+            </Button>
+          ))}
         </div>
       </div>
 
-      {/* Alertas de erro */}
       {hasErrors && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -195,7 +219,6 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
         </Alert>
       )}
 
-      {/* Mensagem quando não há dados */}
       {hasNoData && !hasErrors && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
@@ -207,50 +230,83 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
 
       {/* Cards de métricas principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Visitas à Vitrine</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <Eye className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalViews}</div>
+            <div className="text-3xl font-bold">{totalViews.toLocaleString("pt-BR")}</div>
             <p className="text-xs text-muted-foreground">Últimos {period} dias</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-violet-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Produtos Vistos</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+            <ShoppingBag className="h-4 w-4 text-violet-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProductViews}</div>
+            <div className="text-3xl font-bold">{totalProductViews.toLocaleString("pt-BR")}</div>
             <p className="text-xs text-muted-foreground">Visualizações de produtos</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cliques WhatsApp</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+            <MessageCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{whatsappClicks}</div>
+            <div className="text-3xl font-bold">{whatsappClicks.toLocaleString("pt-BR")}</div>
             <p className="text-xs text-muted-foreground">Interesse em contato</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orçamentos</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Taxa de Engajamento</CardTitle>
+            <Zap className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalQuotes}</div>
-            <p className="text-xs text-muted-foreground">Gerados no período</p>
+            <div className="text-3xl font-bold">{conversionRate}%</div>
+            <p className="text-xs text-muted-foreground">Visitas → Ação (WhatsApp + Orçamento)</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Gráfico de visitas diárias */}
+      {dailyViewsData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Visitas por Dia
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={dailyViewsData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                  labelStyle={{ fontWeight: "bold" }}
+                />
+                <Line type="monotone" dataKey="visitas" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Visitas" />
+                <Line type="monotone" dataKey="produtos" stroke="#8b5cf6" strokeWidth={2} dot={false} name="Produtos" />
+                <Line type="monotone" dataKey="whatsapp" stroke="#22c55e" strokeWidth={2} dot={false} name="WhatsApp" />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="flex gap-4 mt-2 text-xs text-muted-foreground justify-center">
+              <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-primary inline-block" /> Visitas</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-violet-500 inline-block" /> Produtos</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-green-500 inline-block" /> WhatsApp</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Produtos mais vistos */}
       <Card>
@@ -269,9 +325,9 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
                     #{index + 1}
                   </div>
                   {product.image_url && (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
                       className="w-12 h-12 object-cover rounded"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -286,10 +342,10 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
                     </p>
                   </div>
                   <div className="w-24 bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full" 
-                      style={{ 
-                        width: `${(product.views / (topProducts[0]?.views || 1)) * 100}%` 
+                    <div
+                      className="bg-primary h-2 rounded-full"
+                      style={{
+                        width: `${(product.views / (topProducts[0]?.views || 1)) * 100}%`
                       }}
                     />
                   </div>
@@ -304,10 +360,10 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
         </CardContent>
       </Card>
 
-      {/* Taxa de conversão */}
+      {/* Funil de conversão */}
       <Card>
         <CardHeader>
-          <CardTitle>Taxa de Conversão</CardTitle>
+          <CardTitle>Funil de Conversão</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -315,40 +371,36 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-medium">Visitantes → Cliques WhatsApp</span>
                 <span className="text-sm font-bold">
-                  {totalViews > 0 
-                    ? ((whatsappClicks / totalViews) * 100).toFixed(1)
-                    : 0}%
+                  {totalViews > 0 ? ((whatsappClicks / totalViews) * 100).toFixed(1) : 0}%
                 </span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full" 
-                  style={{ 
-                    width: `${totalViews > 0 
-                      ? ((whatsappClicks / totalViews) * 100)
-                      : 0}%` 
-                  }}
-                />
+                <div className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${totalViews > 0 ? Math.min((whatsappClicks / totalViews) * 100, 100) : 0}%` }} />
               </div>
             </div>
             <div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-medium">Visitantes → Orçamentos</span>
                 <span className="text-sm font-bold">
-                  {totalViews > 0 
-                    ? ((totalQuotes / totalViews) * 100).toFixed(1)
-                    : 0}%
+                  {totalViews > 0 ? ((totalQuotes / totalViews) * 100).toFixed(1) : 0}%
                 </span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
-                  style={{ 
-                    width: `${totalViews > 0 
-                      ? ((totalQuotes / totalViews) * 100)
-                      : 0}%` 
-                  }}
-                />
+                <div className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${totalViews > 0 ? Math.min((totalQuotes / totalViews) * 100, 100) : 0}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium">Visitas na Vitrine → Produtos Vistos</span>
+                <span className="text-sm font-bold">
+                  {totalViews > 0 ? ((totalProductViews / totalViews) * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div className="bg-violet-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${totalViews > 0 ? Math.min((totalProductViews / totalViews) * 100, 100) : 0}%` }} />
               </div>
             </div>
           </div>
@@ -364,13 +416,13 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
           <div className="space-y-2">
             {recentEvents.length > 0 ? (
               recentEvents.map((event) => (
-                <div key={event.id} className="flex justify-between items-center text-sm border-b pb-2">
+                <div key={event.id} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
                   <div className="flex items-center gap-2">
                     {event.event_type === "page_view" && <Eye className="h-4 w-4 text-blue-500" />}
                     {event.event_type === "product_view" && <ShoppingBag className="h-4 w-4 text-purple-500" />}
                     {event.event_type === "whatsapp_click" && <MessageCircle className="h-4 w-4 text-green-500" />}
                     {event.event_type === "quote_created" && <FileText className="h-4 w-4 text-orange-500" />}
-                    <span className="font-medium capitalize">{event.event_type.replace("_", " ")}</span>
+                    <span className="font-medium capitalize">{event.event_type.replace(/_/g, " ")}</span>
                   </div>
                   <span className="text-muted-foreground text-xs">
                     {new Date(event.created_at).toLocaleString("pt-BR")}
