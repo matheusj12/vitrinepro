@@ -39,10 +39,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
-  Upload, X, Plus, Link as LinkIcon, Video, Copy, Sparkles, Loader2,
-  MoreHorizontal, Search, Filter, ArrowUpDown, Pencil, Trash2, Tag, Image as ImageIcon
+  Upload, X, Plus, Copy, Sparkles, Loader2,
+  MoreHorizontal, Search, Filter, Pencil, Trash2, Image as ImageIcon, ScanSearch
 } from "lucide-react";
-import { generateProductDescription } from "@/services/ai-product-service";
+import { generateProductDescription, generateFullProductSuggestion, analyzeProductImage } from "@/services/ai-product-service";
 // Removed UpgradeAlert to prevent crash
 
 const DEFAULT_PRODUCT_IMAGE = "/images/default-product-512.png";
@@ -487,14 +487,108 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                     </Select>
                   </div>
                   <div>
-                    <Label>Descrição</Label>
-                    <Textarea className="min-h-[120px]" placeholder="Detalhes do produto..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>Descrição</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-violet-300 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+                          disabled={isGeneratingDescription || !formData.name}
+                          onClick={async () => {
+                            if (!formData.name) { toast.error("Preencha o nome do produto primeiro"); return; }
+                            setIsGeneratingDescription(true);
+                            try {
+                              const categoryName = categories.find(c => c.id === formData.category_id)?.name;
+                              const result = await generateProductDescription(formData.name, categoryName, formData.description);
+                              setFormData(prev => ({ ...prev, description: result.description }));
+                              toast.success("✨ Descrição gerada com IA!");
+                            } catch (err: any) {
+                              toast.error(err.message || "Erro ao gerar descrição");
+                            } finally {
+                              setIsGeneratingDescription(false);
+                            }
+                          }}
+                        >
+                          {isGeneratingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                          Gerar com IA
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                          disabled={isGeneratingDescription || !formData.name}
+                          onClick={async () => {
+                            if (!formData.name) { toast.error("Preencha o nome do produto primeiro"); return; }
+                            setIsGeneratingDescription(true);
+                            try {
+                              const categoryName = categories.find(c => c.id === formData.category_id)?.name;
+                              const result = await generateFullProductSuggestion(formData.name, categoryName);
+                              setFormData(prev => ({ ...prev, description: result.description }));
+                              if (result.seoTitle) toast.info(`💡 Título SEO sugerido: "${result.seoTitle}"`, { duration: 6000 });
+                              toast.success("✨ Sugestão completa gerada!");
+                            } catch (err: any) {
+                              toast.error(err.message || "Erro ao gerar sugestão");
+                            } finally {
+                              setIsGeneratingDescription(false);
+                            }
+                          }}
+                        >
+                          {isGeneratingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+                          Sugestão Completa
+                        </Button>
+                      </div>
+                    </div>
+                    <Textarea
+                      className="min-h-[120px]"
+                      placeholder={isGeneratingDescription ? "✨ IA está gerando a descrição..." : "Detalhes do produto..."}
+                      value={formData.description}
+                      onChange={e => setFormData({ ...formData, description: e.target.value })}
+                      disabled={isGeneratingDescription}
+                    />
+                    {isGeneratingDescription && (
+                      <p className="text-xs text-violet-600 mt-1 animate-pulse">✨ Gerando com inteligência artificial...</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <Label className="mb-2 block">Imagens ({formData.images.length}/{MAX_IMAGES})</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Imagens ({formData.images.length}/{MAX_IMAGES})</Label>
+                      {formData.images.length > 0 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          disabled={isGeneratingDescription}
+                          onClick={async () => {
+                            const firstImg = formData.images[0];
+                            if (!firstImg?.startsWith('data:')) { toast.info("Upload a imagem localmente para analisá-la com IA"); return; }
+                            setIsGeneratingDescription(true);
+                            try {
+                              const result = await analyzeProductImage(firstImg);
+                              setFormData(prev => ({
+                                ...prev,
+                                name: prev.name || result.name,
+                                description: result.description,
+                              }));
+                              toast.success("🔍 Imagem analisada! Nome e descrição preenchidos.");
+                            } catch (err: any) {
+                              toast.error(err.message || "Erro ao analisar imagem");
+                            } finally {
+                              setIsGeneratingDescription(false);
+                            }
+                          }}
+                        >
+                          {isGeneratingDescription ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+                          Analisar com IA
+                        </Button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-4 gap-2 mb-4">
                       {formData.images.map((src, i) => (
                         <div key={i} className="relative aspect-square rounded-md overflow-hidden border group">
