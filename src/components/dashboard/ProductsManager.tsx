@@ -121,6 +121,8 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -177,6 +179,14 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     const matchesCategory = categoryFilter === "all" || p.category_id === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const handleFilterChange = (setter: (v: any) => void) => (v: any) => {
+    setter(v);
+    setCurrentPage(1);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -643,12 +653,12 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                   placeholder="Buscar produto ou SKU..."
                   className="pl-9 bg-background"
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
+                  onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 />
               </div>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select value={categoryFilter} onValueChange={v => { setCategoryFilter(v); setCurrentPage(1); }}>
                   <SelectTrigger className="w-[180px] bg-background">
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
@@ -680,7 +690,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProducts.map((product) => (
+                    paginatedProducts.map((product) => (
                       <TableRow key={product.id} className="group">
                         <TableCell>
                           <div className="h-12 w-12 rounded-md overflow-hidden bg-muted border">
@@ -752,8 +762,35 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
               </Table>
             </div>
 
-            <div className="text-xs text-muted-foreground mt-4 text-center">
-              Mostrando {filteredProducts.length} de {products.length} produtos
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-full border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary"
+                >
+                  ← Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 rounded-full border text-sm font-medium transition-all ${page === currentPage ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-secondary border-border'}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-full border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary"
+                >
+                  Próxima →
+                </button>
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground mt-3 text-center">
+              Mostrando {paginatedProducts.length} de {filteredProducts.length} produtos
             </div>
           </CardContent>
         </Card>
