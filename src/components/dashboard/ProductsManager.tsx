@@ -145,10 +145,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select(`
-            *,
-            categories (name)
-        `)
+        .select('id, name, sku, price, active, image_url, images, category_id, video_url, stock_control_enabled, stock_quantity, description, created_at, categories(name)')
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false });
 
@@ -396,20 +393,27 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     }
   };
 
-  const handleImagesFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImagesFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const remainingSlots = MAX_IMAGES - formData.images.length;
     const selected = files.slice(0, remainingSlots);
-    const readers = selected.map(file => new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    }));
-    Promise.all(readers).then((dataUrls) => {
-      setFormData((prev) => ({ ...prev, images: [...prev.images, ...dataUrls].slice(0, MAX_IMAGES) }));
-    });
-    e.target.value = "";
+
+    const uploadedUrls: string[] = [];
+    for (const file of selected) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `products/${tenantId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true });
+      if (!error) {
+        const { data: urlData } = supabase.storage.from('images').getPublicUrl(path);
+        uploadedUrls.push(urlData.publicUrl);
+      }
+    }
+
+    if (uploadedUrls.length > 0) {
+      setFormData(prev => ({ ...prev, images: [...prev.images, ...uploadedUrls].slice(0, MAX_IMAGES) }));
+    }
+    e.target.value = '';
   };
 
   return (
@@ -577,7 +581,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
                           disabled={isGeneratingDescription}
                           onClick={async () => {
                             const firstImg = formData.images[0];
-                            if (!firstImg?.startsWith('data:')) { toast.info("Upload a imagem localmente para analisá-la com IA"); return; }
+                            if (!firstImg) { toast.info("Adicione uma imagem primeiro"); return; }
                             setIsGeneratingDescription(true);
                             try {
                               const result = await analyzeProductImage(firstImg);
