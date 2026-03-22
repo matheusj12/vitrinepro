@@ -5,7 +5,7 @@
  * storefront components in the configured order.
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { PageSection, PageLayout, DEFAULT_PAGE_LAYOUT } from "@/types/sections";
 import { Product, Category, Banner } from "@/types/database";
 
@@ -34,7 +34,6 @@ import { ProductReels } from "@/components/storefront/ProductReels";
 import { SocialProofToast } from "@/components/storefront/SocialProofToast";
 import { FloatingWhatsAppButton } from "@/components/storefront/FloatingWhatsAppButton";
 import { useCart } from "@/hooks/useCart";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 export interface SectionRendererProps {
     pageLayout: PageLayout;
@@ -78,12 +77,13 @@ export const SectionRenderer = ({
     const { items } = useCart();
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
-    const {
-        visibleProducts,
-        hasMore,
-        isLoading: isLoadingMore,
-        sentinelRef,
-    } = useInfiniteScroll({ products, initialLimit: 12, incrementBy: 8 });
+    const ITEMS_PER_PAGE = 15;
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+    const paginatedProducts = products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    // Reset para página 1 quando filtros/busca mudam
+    useEffect(() => { setCurrentPage(1); }, [products.length, selectedCategoryIds, debouncedSearchQuery]);
 
     // Contact and icon data
     const contact = (storeSettings?.contact as any) || {};
@@ -238,19 +238,36 @@ export const SectionRenderer = ({
                                         </div>
                                     </div>
                                     <StorefrontProductGrid
-                                        products={visibleProducts}
+                                        products={paginatedProducts}
                                         isLoading={isLoadingProducts}
                                         gridClasses="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8"
                                         onAddToCart={handleAddToCart}
                                     />
-                                    {hasMore && (
-                                        <div ref={sentinelRef} className="flex justify-center py-8">
-                                            {isLoadingMore && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                                    <span className="text-sm">Carregando mais...</span>
-                                                </div>
-                                            )}
+                                    {totalPages > 1 && (
+                                        <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
+                                            <button
+                                                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                disabled={currentPage === 1}
+                                                className="px-4 py-2 rounded-full border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary"
+                                            >
+                                                ← Anterior
+                                            </button>
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                <button
+                                                    key={page}
+                                                    onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                    className={`w-10 h-10 rounded-full border text-sm font-medium transition-all ${page === currentPage ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/25' : 'hover:bg-secondary border-border'}`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            ))}
+                                            <button
+                                                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                disabled={currentPage === totalPages}
+                                                className="px-4 py-2 rounded-full border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary"
+                                            >
+                                                Próxima →
+                                            </button>
                                         </div>
                                     )}
                                 </div>
