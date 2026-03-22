@@ -20,8 +20,6 @@ const Storefront = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<string>("");
 
-  useTheme(tenant?.id);
-
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
     return () => clearTimeout(timer);
@@ -43,9 +41,11 @@ const Storefront = () => {
       return data as StoreSettings & { themes: Theme };
     },
     enabled: !!tenant?.id,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     staleTime: 30 * 1000, // 30s — recarrega ao trocar de aba
   });
+
+  useTheme(tenant?.id, storeSettings?.theme_id ?? undefined);
 
   // Favicon dinâmico
   useEffect(() => {
@@ -174,7 +174,7 @@ const Storefront = () => {
       } else {
         let query = supabase
           .from("products")
-          .select("*")
+          .select("id, name, slug, price, images, image_url, video_url, featured, min_quantity, category_id, active, sku, description, stock_control_enabled, stock_quantity")
           .eq("tenant_id", tenant.id)
           .eq("active", true);
 

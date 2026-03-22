@@ -51,7 +51,7 @@ export const useTenantBySlug = (slug: string | undefined) => {
       const { data, error } = await supabase
         .from("tenants")
         .select("*")
-        .ilike("slug", normalizedSlug)
+        .eq("slug", normalizedSlug)
         .eq("active", true)
         .single();
 

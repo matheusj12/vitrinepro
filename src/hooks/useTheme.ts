@@ -27,33 +27,37 @@ interface Theme {
   config: ThemeConfig;
 }
 
-export const useTheme = (tenantId?: string) => {
+export const useTheme = (tenantId?: string, themeId?: string) => {
   const { data: theme, isLoading } = useQuery({
-    queryKey: ["selected-theme", tenantId],
+    queryKey: ["selected-theme", tenantId, themeId],
     queryFn: async () => {
       if (!tenantId) return null;
 
-      // Buscar tema selecionado do tenant
-      const { data: storeSettings, error: storeError } = await supabase
-        .from("store_settings")
-        .select("theme_id")
-        .eq("tenant_id", tenantId)
-        .single();
+      let resolvedThemeId = themeId;
 
-      let themeId = storeSettings?.theme_id;
+      // Se themeId não foi passado diretamente, busca em store_settings
+      if (!resolvedThemeId) {
+        const { data: storeSettings } = await supabase
+          .from("store_settings")
+          .select("theme_id")
+          .eq("tenant_id", tenantId)
+          .single();
 
-      // Se não achar em store_settings, tenta fallback em tenants (legado) ou padrão
-      if (!themeId) {
+        resolvedThemeId = storeSettings?.theme_id;
+      }
+
+      // Se ainda não achar, tenta fallback em tenants (legado) ou padrão
+      if (!resolvedThemeId) {
         const { data: tenant } = await supabase
           .from("tenants")
           .select("selected_theme_id") // Campo legado se existir, ou null
           .eq("id", tenantId)
           .maybeSingle(); // maybeSingle evita erro se não existir
 
-        themeId = (tenant as any)?.selected_theme_id;
+        resolvedThemeId = (tenant as any)?.selected_theme_id;
       }
 
-      if (!themeId) {
+      if (!resolvedThemeId) {
         // Fallback: Buscar tema padrão 'free-classic'
         const { data: defaultTheme } = await supabase
           .from("themes")
@@ -67,7 +71,7 @@ export const useTheme = (tenantId?: string) => {
       const { data: themeData, error } = await supabase
         .from("themes")
         .select("*")
-        .eq("id", themeId)
+        .eq("id", resolvedThemeId)
         .single();
 
       if (error || !themeData) {
@@ -116,7 +120,7 @@ export const useTheme = (tenantId?: string) => {
     // 2. Product Card Styles
     if (config.productCard) {
       if (config.productCard.radius) root.style.setProperty("--radius", config.productCard.radius);
-      // Podemos adicionar mais vars se o CSS global suportar, 
+      // Podemos adicionar mais vars se o CSS global suportar,
       // mas --radius é padrão do Shadcn.
       // Para shadow personalizadas, precisaria de suporte no tailwind config ou style inline no card.
     }

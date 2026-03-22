@@ -5,7 +5,7 @@
  * storefront components in the configured order.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PageSection, PageLayout, DEFAULT_PAGE_LAYOUT } from "@/types/sections";
 import { Product, Category, Banner } from "@/types/database";
 
@@ -90,7 +90,7 @@ export const SectionRenderer = ({
     const logoUrl = (storeSettings as any)?.branding?.logo_url;
     const aboutText = (storeSettings as any)?.branding?.about_text as string | undefined;
     const floatingIconUrl = (storeSettings as any)?.floating_button_icon_url as string | undefined;
-    const productNames = products.map((p) => p.name);
+    const productNames = useMemo(() => products.map((p) => p.name), [products]);
 
     const sections = pageLayout?.sections || DEFAULT_PAGE_LAYOUT.sections;
 
