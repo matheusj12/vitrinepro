@@ -9,6 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,7 +34,9 @@ import {
     Loader2,
     Bell,
     CheckCircle2,
-    XCircle
+    XCircle,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 
 interface StockManagerProps {
@@ -34,9 +49,15 @@ interface ProductWithStock extends Product {
     low_stock_alert?: number;
 }
 
+type StockStatusFilter = "all" | "disabled" | "out" | "low" | "ok";
+
+const PAGE_SIZE = 15;
+
 const StockManager = ({ tenantId }: StockManagerProps) => {
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<StockStatusFilter>("all");
+    const [currentPage, setCurrentPage] = useState(1);
     const [editingStock, setEditingStock] = useState<Record<string, number>>({});
     const [editingAlert, setEditingAlert] = useState<Record<string, number>>({});
 
@@ -90,17 +111,67 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
         },
     });
 
-    // Filter products
-    const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+    // Enable all stock control mutation
+    const enableAllStockMutation = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase
+                .from("products")
+                .update({ stock_control_enabled: true })
+                .eq("tenant_id", tenantId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["products-stock", tenantId] });
+            toast.success("Controle de estoque ativado em todos os produtos!");
+        },
+        onError: () => {
+            toast.error("Erro ao ativar controle de estoque");
+        },
+    });
+
+    const getStockStatus = (product: ProductWithStock) => {
+        if (!product.stock_control_enabled) return "disabled";
+        const stock = product.stock_quantity || 0;
+        const alert = product.low_stock_alert || 5;
+        if (stock === 0) return "out";
+        if (stock <= alert) return "low";
+        return "ok";
+    };
+
+    // Filter products by search + status
+    const filteredProducts = products.filter((product) => {
+        const matchesSearch =
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.sku?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus =
+            statusFilter === "all" || getStockStatus(product) === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
     );
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setCurrentPage(1);
+    };
+
+    const handleStatusFilterChange = (value: StockStatusFilter) => {
+        setStatusFilter(value);
+        setCurrentPage(1);
+    };
 
     // Stats
     const totalProducts = products.length;
     const productsWithStock = products.filter((p) => p.stock_control_enabled);
     const lowStockProducts = productsWithStock.filter(
-        (p) => (p.stock_quantity || 0) <= (p.low_stock_alert || 5)
+        (p) => (p.stock_quantity || 0) <= (p.low_stock_alert || 5) && (p.stock_quantity || 0) > 0
     );
     const outOfStockProducts = productsWithStock.filter(
         (p) => (p.stock_quantity || 0) === 0
@@ -136,15 +207,6 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
         });
     };
 
-    const getStockStatus = (product: ProductWithStock) => {
-        if (!product.stock_control_enabled) return "disabled";
-        const stock = product.stock_quantity || 0;
-        const alert = product.low_stock_alert || 5;
-        if (stock === 0) return "out";
-        if (stock <= alert) return "low";
-        return "ok";
-    };
-
     const getStockBadge = (status: string) => {
         switch (status) {
             case "out":
@@ -170,9 +232,18 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
                 );
             default:
                 return (
-                    <Badge variant="outline" className="gap-1">
-                        Desativado
-                    </Badge>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge variant="outline" className="gap-1 cursor-help">
+                                    Desativado
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Ative o toggle &apos;Controlar&apos; para rastrear o estoque deste produto</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 );
         }
     };
@@ -188,11 +259,24 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h2 className="text-2xl font-bold">Controle de Estoque</h2>
-                <p className="text-muted-foreground">
-                    Gerencie o estoque dos seus produtos e receba alertas
-                </p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold">Controle de Estoque</h2>
+                    <p className="text-muted-foreground">
+                        Gerencie o estoque dos seus produtos e receba alertas
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => enableAllStockMutation.mutate()}
+                    disabled={enableAllStockMutation.isPending}
+                >
+                    {enableAllStockMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    ) : null}
+                    Ativar controle em todos
+                </Button>
             </div>
 
             {/* Stats */}
@@ -279,21 +363,38 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
                 </Card>
             )}
 
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Buscar por nome ou SKU..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                />
+            {/* Search + Status filter */}
+            <div className="flex gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por nome ou SKU..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+                <Select
+                    value={statusFilter}
+                    onValueChange={(v) => handleStatusFilterChange(v as StockStatusFilter)}
+                >
+                    <SelectTrigger className="w-44">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="disabled">Desativado</SelectItem>
+                        <SelectItem value="out">Sem estoque</SelectItem>
+                        <SelectItem value="low">Estoque baixo</SelectItem>
+                        <SelectItem value="ok">Em estoque</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* Products List */}
             <div className="space-y-3">
                 <AnimatePresence>
-                    {filteredProducts.map((product, index) => {
+                    {paginatedProducts.map((product, index) => {
                         const status = getStockStatus(product);
                         const currentStock =
                             editingStock[product.id] !== undefined
@@ -454,15 +555,52 @@ const StockManager = ({ tenantId }: StockManagerProps) => {
                     <CardContent className="py-12 text-center">
                         <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <h3 className="font-semibold mb-2">
-                            {searchQuery ? "Nenhum produto encontrado" : "Sem produtos"}
+                            {searchQuery || statusFilter !== "all" ? "Nenhum produto encontrado" : "Sem produtos"}
                         </h3>
                         <p className="text-muted-foreground">
-                            {searchQuery
-                                ? "Tente outra busca"
+                            {searchQuery || statusFilter !== "all"
+                                ? "Tente outra busca ou filtro"
                                 : "Cadastre produtos para gerenciar o estoque"}
                         </p>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                    </Button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="w-9"
+                        >
+                            {page}
+                        </Button>
+                    ))}
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Próxima
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
             )}
         </div>
     );

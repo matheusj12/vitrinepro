@@ -497,7 +497,7 @@ const Dashboard = () => {
                 {activeTab === "coupons" && <CouponsManager tenantId={tenant.id} />}
                 {activeTab === "analytics" && <AnalyticsDashboard tenantId={tenant.id} />}
                 {activeTab === "stock" && <StockManager tenantId={tenant.id} />}
-                {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} />}
+                {activeTab === "catalog" && <CatalogExport tenantId={tenant.id} storeName={tenant.company_name} primaryColor={tenant.primary_color} whatsappNumber={tenant.whatsapp_number || undefined} />}
                 {activeTab === "themes" && <ThemesManager tenantId={tenant.id} slug={tenant.slug} />}
                 {activeTab === "qrcode" && <QRCodeGenerator storeUrl={storeUrl} storeName={tenant.company_name} />}
                 {activeTab === "notifications" && <NotificationsManager tenantId={tenant.id} />}

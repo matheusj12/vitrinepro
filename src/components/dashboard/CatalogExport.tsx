@@ -12,7 +12,6 @@ import {
     FileDown,
     Loader2,
     CheckCircle2,
-    Eye,
     Palette,
     Grid3X3,
     List,
@@ -24,13 +23,16 @@ interface CatalogExportProps {
     tenantId: string;
     storeName: string;
     primaryColor: string;
+    whatsappNumber?: string;
 }
 
-const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps) => {
+const CatalogExport = ({ tenantId, storeName, primaryColor, whatsappNumber }: CatalogExportProps) => {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [generationProgress, setGenerationProgress] = useState(0);
     const [layout, setLayout] = useState<"grid" | "list">("grid");
     const [showPrices, setShowPrices] = useState(true);
     const [showDescriptions, setShowDescriptions] = useState(true);
+    const [showContact, setShowContact] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
     // Fetch products
@@ -94,6 +96,7 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
         }
 
         setIsGenerating(true);
+        setGenerationProgress(0);
         toast.loading("Gerando catálogo em PDF...");
 
         try {
@@ -125,6 +128,18 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
             pdf.setFontSize(12);
             pdf.text(`${filteredProducts.length} produtos`, pageWidth / 2, pageHeight / 2 + 25, { align: "center" });
 
+            // WhatsApp on cover
+            if (showContact && whatsappNumber) {
+                pdf.setFontSize(11);
+                pdf.setFont("helvetica", "normal");
+                pdf.text(
+                    `WhatsApp: ${whatsappNumber}`,
+                    pageWidth / 2,
+                    pageHeight / 2 + 40,
+                    { align: "center" }
+                );
+            }
+
             // Products pages
             pdf.addPage();
             let y = margin;
@@ -135,7 +150,10 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                 const cardHeight = showDescriptions ? 80 : 60;
                 let col = 0;
 
-                for (const product of filteredProducts) {
+                for (let idx = 0; idx < filteredProducts.length; idx++) {
+                    const product = filteredProducts[idx];
+                    setGenerationProgress(Math.round(((idx + 1) / filteredProducts.length) * 100));
+
                     if (y + cardHeight > pageHeight - margin) {
                         pdf.addPage();
                         y = margin;
@@ -189,7 +207,10 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                 }
             } else {
                 // List layout
-                for (const product of filteredProducts) {
+                for (let idx = 0; idx < filteredProducts.length; idx++) {
+                    const product = filteredProducts[idx];
+                    setGenerationProgress(Math.round(((idx + 1) / filteredProducts.length) * 100));
+
                     const rowHeight = showDescriptions ? 35 : 25;
 
                     if (y + rowHeight > pageHeight - margin) {
@@ -235,8 +256,9 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                 { align: "center" }
             );
 
-            // Save the PDF
-            const fileName = `catalogo-${storeName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+            // Save the PDF with date in filename
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const fileName = `catalogo-${storeName.toLowerCase().replace(/\s+/g, "-")}-${dateStr}.pdf`;
             pdf.save(fileName);
 
             toast.dismiss();
@@ -247,6 +269,7 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
             toast.error("Erro ao gerar PDF. Tente novamente.");
         } finally {
             setIsGenerating(false);
+            setGenerationProgress(0);
         }
     };
 
@@ -339,6 +362,21 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                                     onCheckedChange={setShowDescriptions}
                                 />
                             </div>
+
+                            {whatsappNumber && (
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <Label>WhatsApp na Capa</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Exibir número de contato na capa
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={showContact}
+                                        onCheckedChange={setShowContact}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Generate button */}
@@ -351,7 +389,7 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                             {isGenerating ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Gerando PDF...
+                                    Gerando PDF... {generationProgress > 0 && `${generationProgress}%`}
                                 </>
                             ) : (
                                 <>
@@ -386,6 +424,11 @@ const CatalogExport = ({ tenantId, storeName, primaryColor }: CatalogExportProps
                                 <p className="text-xs mt-2 opacity-60">
                                     {filteredProducts.length} produtos
                                 </p>
+                                {showContact && whatsappNumber && (
+                                    <p className="text-xs mt-1 opacity-70">
+                                        WhatsApp: {whatsappNumber}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Products preview */}
