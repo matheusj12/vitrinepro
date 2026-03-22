@@ -7,9 +7,11 @@ import {
   Linkedin,
   Twitter,
   MessageCircle,
-  Video
+  Video,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -78,6 +80,7 @@ export const PublicHeader = ({
 }: PublicHeaderProps) => {
   const { getTotalItems } = useCart();
   const cartItemsCount = getTotalItems();
+  const { canInstall, install } = usePWAInstall();
 
   const SocialIcon = ({
     icon,
@@ -173,6 +176,20 @@ export const PublicHeader = ({
             <SocialIcon icon={twitterIcon} label="Twitter/X" url={twitterUrl} FallbackIcon={Twitter} />
             <SocialIcon icon={linkedinIcon} label="LinkedIn" url={linkedinUrl} FallbackIcon={Linkedin} />
           </div>
+
+          {/* PWA Install Button */}
+          {canInstall && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={install}
+              className="relative rounded-full h-10 w-10 border-border/50 bg-background/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 group"
+              aria-label="Instalar app"
+              title="Instalar app na tela inicial"
+            >
+              <Download className="h-4 w-4 transition-transform group-hover:scale-110" />
+            </Button>
+          )}
 
           {/* Cart Button */}
           <Link to={`/loja/${slug}/carrinho`}>
