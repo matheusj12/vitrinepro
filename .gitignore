@@ -45,11 +45,15 @@ Thumbs.db
 .idea/
 *.swp
 
-# AIOX Local (AIOX)
+# AIOX / AI tools (local)
 .aiox-core/local/
-.claude/settings.local.json
-.aiox/install-log.txt
 .aiox/
 .aiox-core/
 .codex/
+.antigravity/
+.claude/
+.cursor/
+.gemini/
+.github/
 AGENTS.md
+.env.example
