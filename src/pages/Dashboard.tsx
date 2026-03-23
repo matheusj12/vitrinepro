@@ -406,6 +406,11 @@ const Dashboard = () => {
               </div>
 
               <div className="flex items-center gap-3">
+                {canInstall && (
+                  <Button variant="outline" size="icon" onClick={install} className="rounded-full w-9 h-9 md:hidden" title="Instalar App">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -416,7 +421,7 @@ const Dashboard = () => {
                 </Button>
                 <div className="hidden md:flex items-center gap-2">
                   {canInstall && (
-                    <Button variant="outline" size="sm" onClick={install} className="gap-2 rounded-full hidden sm:flex">
+                    <Button variant="outline" size="sm" onClick={install} className="gap-2 rounded-full">
                       <Download className="h-4 w-4" />
                       Instalar App
                     </Button>
