@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, Category } from "@/types/database";
@@ -118,6 +118,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   // Removed showUpgradeAlert state
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -400,6 +401,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     });
     setEditingId(product.id);
     setIsCreating(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -484,7 +486,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       </div>
 
       {isCreating ? (
-        <Card className="border-l-4 border-l-primary shadow-md">
+        <Card ref={formRef} className="border-l-4 border-l-primary shadow-md">
           <CardHeader className="border-b bg-muted/20 pb-4">
             <div className="flex justify-between items-center">
               <div>
