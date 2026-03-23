@@ -126,7 +126,7 @@ export const PaymentSettingsManager = () => {
         toast.success(`${label} copiado!`);
     };
 
-    const webhookBaseUrl = window.location.origin.replace("localhost:8080", "YOUR_SUPABASE_URL") + "/functions/v1";
+    const webhookBaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) + "/functions/v1";
 
     if (isLoading) {
         return (
