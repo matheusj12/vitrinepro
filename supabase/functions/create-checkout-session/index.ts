@@ -274,8 +274,17 @@ async function createAsaasCheckout(
 
     if (!paymentLinkResponse.ok) {
         const errorData = await paymentLinkResponse.text();
-        console.error("Asaas error:", errorData);
-        throw new Error("Erro ao criar link de pagamento no Asaas");
+        console.error("Asaas paymentLink error:", errorData);
+        let asaasMessage = "Erro ao criar link de pagamento no Asaas";
+        try {
+            const parsed = JSON.parse(errorData);
+            if (parsed.errors?.length > 0) {
+                asaasMessage = parsed.errors.map((e: any) => e.description || e.message).join("; ");
+            } else if (parsed.message) {
+                asaasMessage = parsed.message;
+            }
+        } catch {}
+        throw new Error(asaasMessage);
     }
 
     const paymentLinkData = await paymentLinkResponse.json();
