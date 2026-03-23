@@ -17,7 +17,6 @@ import {
     User,
     MapPin,
     CreditCard,
-    Truck,
     Check,
     Loader2,
     Copy,
@@ -25,7 +24,7 @@ import {
     Clock,
     CheckCircle2,
     Phone,
-    Smartphone
+    FileText
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -50,7 +49,7 @@ interface CheckoutData {
     neighborhood: string;
     city: string;
     state: string;
-    paymentMethod: "pix" | "card" | "boleto";
+    paymentMethod: "pix" | "boleto";
     notes: string;
 }
 
@@ -62,6 +61,14 @@ const Checkout = () => {
     const [orderCreated, setOrderCreated] = useState(false);
     const [pixCode, setPixCode] = useState("");
     const [orderId, setOrderId] = useState("");
+    const [asaasPayment, setAsaasPayment] = useState<{
+        pix_qr_code?: string;
+        pix_qr_code_url?: string;
+        boleto_url?: string;
+        boleto_code?: string;
+        due_date?: string;
+    } | null>(null);
+    const [isGeneratingPayment, setIsGeneratingPayment] = useState(false);
 
     // Cart from localStorage
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -82,7 +89,7 @@ const Checkout = () => {
         neighborhood: "",
         city: "",
         state: "",
-        paymentMethod: "pix",
+        paymentMethod: "pix" as "pix" | "boleto",
         notes: "",
     });
 
@@ -218,19 +225,33 @@ const Checkout = () => {
             if (orderError) throw orderError;
             return order;
         },
-        onSuccess: (order) => {
+        onSuccess: async (order) => {
             setOrderId(order.id);
-            setOrderCreated(true);
-
-            // Generate PIX code (mock - em produção usar API de pagamento)
-            const mockPixCode = `00020126580014br.gov.bcb.pix0136${order.id}520400005303986540${total.toFixed(
-                2
-            )}5802BR5925${tenant?.company_name?.substring(0, 25) || "Loja"}6009SAO PAULO62070503***6304`;
-            setPixCode(mockPixCode);
-
-            // Clear cart
             localStorage.removeItem(`cart-${slug}`);
 
+            // Gerar pagamento real via Asaas
+            if (formData.paymentMethod === "pix" || formData.paymentMethod === "boleto") {
+                setIsGeneratingPayment(true);
+                try {
+                    const paymentType = formData.paymentMethod === "boleto" ? "BOLETO_BANCARIO" : "PIX";
+                    const { data, error } = await supabase.functions.invoke("create-store-order-payment", {
+                        body: { order_id: order.id, slug, payment_method: paymentType },
+                    });
+
+                    if (!error && data) {
+                        setAsaasPayment(data);
+                        if (data.pix_qr_code) setPixCode(data.pix_qr_code);
+                    } else {
+                        console.error("Asaas payment error:", error);
+                    }
+                } catch (e) {
+                    console.error("Payment generation failed:", e);
+                } finally {
+                    setIsGeneratingPayment(false);
+                }
+            }
+
+            setOrderCreated(true);
             toast.success("Pedido criado com sucesso!");
         },
         onError: (error: any) => {
@@ -334,30 +355,101 @@ const Checkout = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                            {/* PIX */}
                             {formData.paymentMethod === "pix" && (
                                 <div className="space-y-4">
-                                    <div className="text-center">
-                                        <p className="text-sm text-muted-foreground mb-2">
-                                            Escaneie o QR Code ou copie o código PIX
-                                        </p>
-                                        <div className="inline-block p-4 bg-white rounded-xl border-2 border-gray-200">
-                                            <QRCodeSVG value={pixCode} size={180} />
+                                    {isGeneratingPayment ? (
+                                        <div className="flex flex-col items-center gap-3 py-6">
+                                            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                                            <p className="text-sm text-muted-foreground">Gerando PIX...</p>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <>
+                                            <div className="text-center">
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    Escaneie o QR Code ou copie o código PIX
+                                                </p>
+                                                <div className="inline-block p-4 bg-white rounded-xl border-2 border-gray-200">
+                                                    {asaasPayment?.pix_qr_code_url ? (
+                                                        <img
+                                                            src={asaasPayment.pix_qr_code_url}
+                                                            alt="QR Code PIX"
+                                                            className="w-[180px] h-[180px]"
+                                                        />
+                                                    ) : pixCode ? (
+                                                        <QRCodeSVG value={pixCode} size={180} />
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground w-[180px] text-center py-8">
+                                                            QR Code não disponível
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                    <div className="flex gap-2">
-                                        <Input value={pixCode} readOnly className="text-xs" />
-                                        <Button variant="outline" onClick={copyPixCode}>
-                                            <Copy className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                                            {pixCode && (
+                                                <div className="flex gap-2">
+                                                    <Input value={pixCode} readOnly className="text-xs" />
+                                                    <Button variant="outline" onClick={copyPixCode}>
+                                                        <Copy className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
 
-                                    <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg text-sm">
-                                        <Clock className="h-4 w-4 text-yellow-600" />
-                                        <span className="text-yellow-800">
-                                            O PIX expira em 30 minutos
-                                        </span>
-                                    </div>
+                                            <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg text-sm">
+                                                <Clock className="h-4 w-4 text-yellow-600" />
+                                                <span className="text-yellow-800">
+                                                    O PIX expira em 30 minutos
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Boleto */}
+                            {formData.paymentMethod === "boleto" && (
+                                <div className="space-y-4">
+                                    {isGeneratingPayment ? (
+                                        <div className="flex flex-col items-center gap-3 py-6">
+                                            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                                            <p className="text-sm text-muted-foreground">Gerando boleto...</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {asaasPayment?.boleto_code && (
+                                                <div className="space-y-2">
+                                                    <p className="text-sm font-medium">Linha Digitável</p>
+                                                    <div className="flex gap-2">
+                                                        <Input value={asaasPayment.boleto_code} readOnly className="text-xs font-mono" />
+                                                        <Button variant="outline" onClick={() => {
+                                                            navigator.clipboard.writeText(asaasPayment.boleto_code!);
+                                                            toast.success("Código copiado!");
+                                                        }}>
+                                                            <Copy className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {asaasPayment?.boleto_url && (
+                                                <Button
+                                                    className="w-full"
+                                                    variant="outline"
+                                                    onClick={() => window.open(asaasPayment.boleto_url, "_blank")}
+                                                >
+                                                    <FileText className="h-4 w-4 mr-2" />
+                                                    Abrir Boleto PDF
+                                                </Button>
+                                            )}
+
+                                            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm">
+                                                <Clock className="h-4 w-4 text-blue-600" />
+                                                <span className="text-blue-800">
+                                                    O boleto vence em 3 dias úteis
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
 
@@ -662,7 +754,7 @@ const Checkout = () => {
                                             onValueChange={(value) =>
                                                 setFormData({
                                                     ...formData,
-                                                    paymentMethod: value as "pix" | "card" | "boleto",
+                                                    paymentMethod: value as "pix" | "boleto",
                                                 })
                                             }
                                             className="space-y-3"
@@ -692,22 +784,22 @@ const Checkout = () => {
                                             </div>
 
                                             <div
-                                                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${formData.paymentMethod === "card"
+                                                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${formData.paymentMethod === "boleto"
                                                         ? "border-blue-500 bg-blue-50"
                                                         : "border-gray-200 hover:border-gray-300"
                                                     }`}
                                                 onClick={() =>
-                                                    setFormData({ ...formData, paymentMethod: "card" })
+                                                    setFormData({ ...formData, paymentMethod: "boleto" })
                                                 }
                                             >
-                                                <RadioGroupItem value="card" id="card" />
+                                                <RadioGroupItem value="boleto" id="boleto" />
                                                 <CreditCard className="h-6 w-6 text-blue-600" />
                                                 <div className="flex-1">
-                                                    <Label htmlFor="card" className="font-medium cursor-pointer">
-                                                        Cartão de Crédito
+                                                    <Label htmlFor="boleto" className="font-medium cursor-pointer">
+                                                        Boleto Bancário
                                                     </Label>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Em até 12x sem juros
+                                                        Vence em 3 dias úteis
                                                     </p>
                                                 </div>
                                             </div>

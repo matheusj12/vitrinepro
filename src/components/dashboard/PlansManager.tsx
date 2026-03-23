@@ -65,7 +65,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                 const { data, error } = await supabase.functions.invoke("create-checkout-session", {
                     body: {
                         planId: plan.id,
-                        gateway: "mercadopago", // ou "asaas"
+                        gateway: "asaas",
                         successUrl: window.location.origin + "/dashboard?payment=success",
                         cancelUrl: window.location.origin + "/dashboard?payment=canceled"
                     },
