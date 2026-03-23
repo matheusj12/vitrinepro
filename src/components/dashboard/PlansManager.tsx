@@ -71,18 +71,26 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                     },
                 });
 
-                if (error) throw error;
+                if (error) {
+                    // Extrair mensagem real da Edge Function (FunctionsHttpError.context)
+                    let detail = "Verifique se o Asaas está configurado no SuperAdmin → Payments.";
+                    try {
+                        const body = await (error as any).context?.json?.();
+                        if (body?.error) detail = body.error;
+                    } catch {}
+                    throw new Error(detail);
+                }
 
                 if (data?.checkoutUrl) {
                     window.location.href = data.checkoutUrl;
                 } else {
-                    throw new Error("URL de checkout não retornada");
+                    throw new Error("URL de checkout não retornada pela função");
                 }
             } catch (err: any) {
                 console.error("Checkout error:", err);
                 toast.error("Erro ao iniciar checkout", {
-                    description: err.message || "Verifique se os gateways estão configurados no SuperAdmin.",
-                    duration: 5000,
+                    description: err.message,
+                    duration: 6000,
                 });
             } finally {
                 setChangingPlan(null);

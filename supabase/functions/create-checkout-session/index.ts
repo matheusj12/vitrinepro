@@ -258,12 +258,11 @@ async function createAsaasCheckout(
         body: JSON.stringify({
             name: `VitrinePro - Plano ${plan.name}`,
             description: plan.description || `Assinatura mensal do plano ${plan.name}`,
-            billingType: "UNDEFINED", // Allows PIX, Boleto, Card
-            chargeType: "DETACHED",
+            billingType: "UNDEFINED", // Permite PIX, Boleto e Cartão
+            chargeType: "RECURRENT",  // Assinatura recorrente (compatível com subscriptionCycle)
             value: priceInReais,
             dueDateLimitDays: 7,
             subscriptionCycle: "MONTHLY",
-            maxInstallmentCount: 1,
             notificationEnabled: true,
             externalReference: JSON.stringify({
                 tenant_id: membership.tenant_id,
