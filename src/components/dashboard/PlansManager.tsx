@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Loader2, Sparkles, Zap } from "lucide-react";
+import { Check, Crown, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -193,24 +193,6 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                                             <span className="text-sm">{feature}</span>
                                         </div>
                                     ))}
-                                    {plan.max_products > 0 && (
-                                        <div className="flex items-center gap-3">
-                                            <Check className={`h-5 w-5 shrink-0 ${isPopular ? "text-primary" : "text-green-500"}`} />
-                                            <span className="text-sm">Até {plan.max_products} produtos</span>
-                                        </div>
-                                    )}
-                                    {plan.max_products === -1 && (
-                                        <div className="flex items-center gap-3">
-                                            <Check className={`h-5 w-5 shrink-0 ${isPopular ? "text-primary" : "text-green-500"}`} />
-                                            <span className="text-sm font-medium">Produtos ilimitados</span>
-                                        </div>
-                                    )}
-                                    {plan.trial_days > 0 && (
-                                        <div className="flex items-center gap-3">
-                                            <Zap className={`h-5 w-5 shrink-0 ${isPopular ? "text-primary" : "text-amber-500"}`} />
-                                            <span className="text-sm">{plan.trial_days} dias de teste grátis</span>
-                                        </div>
-                                    )}
                                 </div>
 
                                 <Button
@@ -230,7 +212,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                                             Plano Atual
                                         </>
                                     ) : plan.price_cents > 0 ? (
-                                        `Testar ${plan.trial_days} dias grátis`
+                                        "Assinar Agora"
                                     ) : (
                                         "Selecionar"
                                     )}
