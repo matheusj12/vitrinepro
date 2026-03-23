@@ -147,7 +147,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select('id, name, sku, price, active, image_url, images, category_id, video_url, stock_control_enabled, stock_quantity, description, created_at, categories(name)')
+        .select('id, name, sku, price, active, image_url, images, category_id, video_url, stock_control_enabled, stock_quantity, min_quantity, description, created_at, categories(name)')
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false });
 
@@ -393,7 +393,7 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       sku: product.sku || "",
       description: product.description || "",
       price: product.price ? product.price.toString() : "",
-      min_quantity: product.min_quantity.toString(),
+      min_quantity: (product.min_quantity ?? 1).toString(),
       category_id: product.category_id || "",
       active: product.active,
       images: Array.isArray(product.images) ? product.images : (product.image_url ? [product.image_url] : []),
