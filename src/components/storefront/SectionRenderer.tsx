@@ -5,7 +5,8 @@
  * storefront components in the configured order.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Search, X } from "lucide-react";
 import { PageSection, PageLayout, DEFAULT_PAGE_LAYOUT } from "@/types/sections";
 import { Product, Category, Banner } from "@/types/database";
 
@@ -174,7 +175,30 @@ export const SectionRenderer = ({
             case "product_grid":
                 return (
                     <div key={section.id} className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-12">
-                        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 mt-4 sm:mt-12 transition-all">
+                        {/* ── Barra de busca mobile ── */}
+                        <div className="md:hidden mb-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <input
+                                    data-search-input
+                                    type="text"
+                                    placeholder="Buscar produtos..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-9 h-11 rounded-xl bg-secondary/40 border border-transparent focus:border-primary/30 focus:bg-background outline-none transition-colors text-sm"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery("")}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 mt-0 sm:mt-12 transition-all">
                             <div className="hidden md:block">
                                 <StorefrontFilters
                                     searchQuery={searchQuery}

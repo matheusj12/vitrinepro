@@ -76,8 +76,11 @@ export const StorefrontBottomNav = ({
         {/* Buscar */}
         <button
           onClick={() => {
-            const input = document.querySelector<HTMLInputElement>('input[type="text"]');
-            if (input) { input.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+            const input = document.querySelector<HTMLInputElement>("[data-search-input]");
+            if (input) {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              setTimeout(() => input.focus(), 300);
+            }
           }}
           className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground hover:text-foreground transition-colors"
         >

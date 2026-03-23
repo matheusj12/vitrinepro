@@ -56,6 +56,7 @@ export const StorefrontFilters = ({
     <div className="relative mb-6">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        data-search-input
         type="text"
         placeholder="Buscar produtos..."
         className="pl-9 bg-secondary/30 border-transparent focus:bg-background transition-colors h-11 rounded-xl"
