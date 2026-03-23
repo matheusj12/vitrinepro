@@ -17,14 +17,14 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/*.svg"],
       manifest: {
-        name: "VitrinePro - Gerenciar Loja",
+        name: "VitrinePro",
         short_name: "VitrinePro",
-        description: "Gerencie sua loja online de qualquer lugar",
+        description: "Vitrine digital e gerenciamento de loja online",
         theme_color: "#f97316",
         background_color: "#ffffff",
         display: "standalone",
-        start_url: "/dashboard",
-        scope: "/dashboard",
+        start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "/pwa-192.png",
