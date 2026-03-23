@@ -134,7 +134,7 @@ export const StorefrontFilters = ({
   return (
     <>
       {/* Sidebar de Filtros (Desktop) */}
-      <aside className="hidden md:block w-64 space-y-6 sticky top-24 h-fit pr-4">
+      <aside className="hidden md:block w-full space-y-6 sticky top-24 h-fit pr-4">
         <SearchInput />
         <CategoryFilters />
         <SortFilters />
