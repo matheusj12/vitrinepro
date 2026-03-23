@@ -140,6 +140,18 @@ const CatalogExport = ({ tenantId, storeName, primaryColor, whatsappNumber }: Ca
                 );
             }
 
+            // Pré-carrega TODAS as imagens em paralelo (evita N+1 sequencial)
+            setGenerationProgress(5);
+            const imageUrls = filteredProducts.map(p => p.image_url).filter(Boolean) as string[];
+            const imageResults = await Promise.allSettled(imageUrls.map(loadImage));
+            const imageMap = new Map<string, HTMLImageElement>();
+            imageUrls.forEach((url, i) => {
+                if (imageResults[i].status === "fulfilled") {
+                    imageMap.set(url, (imageResults[i] as PromiseFulfilledResult<HTMLImageElement>).value);
+                }
+            });
+            setGenerationProgress(30);
+
             // Products pages
             pdf.addPage();
             let y = margin;
@@ -152,7 +164,7 @@ const CatalogExport = ({ tenantId, storeName, primaryColor, whatsappNumber }: Ca
 
                 for (let idx = 0; idx < filteredProducts.length; idx++) {
                     const product = filteredProducts[idx];
-                    setGenerationProgress(Math.round(((idx + 1) / filteredProducts.length) * 100));
+                    setGenerationProgress(30 + Math.round(((idx + 1) / filteredProducts.length) * 70));
 
                     if (y + cardHeight > pageHeight - margin) {
                         pdf.addPage();
@@ -166,14 +178,11 @@ const CatalogExport = ({ tenantId, storeName, primaryColor, whatsappNumber }: Ca
                     pdf.setFillColor(250, 250, 250);
                     pdf.roundedRect(x, y, cardWidth, cardHeight, 3, 3, "F");
 
-                    // Product image
-                    try {
-                        if (product.image_url) {
-                            const img = await loadImage(product.image_url);
-                            pdf.addImage(img, "JPEG", x + 5, y + 5, 25, 25);
-                        }
-                    } catch (e) {
-                        // Skip image if it fails to load
+                    // Product image (já carregada no mapa)
+                    if (product.image_url && imageMap.has(product.image_url)) {
+                        try {
+                            pdf.addImage(imageMap.get(product.image_url)!, "JPEG", x + 5, y + 5, 25, 25);
+                        } catch (e) { /* Skip */ }
                     }
 
                     // Product info
@@ -209,7 +218,7 @@ const CatalogExport = ({ tenantId, storeName, primaryColor, whatsappNumber }: Ca
                 // List layout
                 for (let idx = 0; idx < filteredProducts.length; idx++) {
                     const product = filteredProducts[idx];
-                    setGenerationProgress(Math.round(((idx + 1) / filteredProducts.length) * 100));
+                    setGenerationProgress(30 + Math.round(((idx + 1) / filteredProducts.length) * 70));
 
                     const rowHeight = showDescriptions ? 35 : 25;
 

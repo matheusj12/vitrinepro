@@ -77,26 +77,54 @@ const shippingStatusLabels: Record<string, { label: string; color: string; icon:
     cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800", icon: XCircle },
 };
 
+const PAGE_SIZE = 20;
+
 const OrdersManager = ({ tenantId }: OrdersManagerProps) => {
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [page, setPage] = useState(1);
 
-    // Fetch orders
-    const { data: orders, isLoading } = useQuery({
-        queryKey: ["orders", tenantId],
+    // Stats leves (sem trazer os items/dados pesados)
+    const { data: statsData } = useQuery({
+        queryKey: ["orders-stats", tenantId],
+        staleTime: 2 * 60 * 1000,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("orders")
-                .select("*")
+                .select("id, total, payment_status, shipping_status")
+                .eq("tenant_id", tenantId);
+            if (error) throw error;
+            return data;
+        },
+    });
+
+    // Fetch orders paginado
+    const { data: ordersPage, isLoading } = useQuery({
+        queryKey: ["orders", tenantId, page, statusFilter],
+        staleTime: 2 * 60 * 1000,
+        queryFn: async () => {
+            let query = supabase
+                .from("orders")
+                .select("*", { count: "exact" })
                 .eq("tenant_id", tenantId)
                 .order("created_at", { ascending: false });
 
+            if (statusFilter !== "all") {
+                query = query.or(`payment_status.eq.${statusFilter},shipping_status.eq.${statusFilter}`);
+            }
+
+            const { data, error, count } = await query
+                .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
             if (error) throw error;
-            return data as Order[];
+            return { orders: data as Order[], total: count ?? 0 };
         },
     });
+
+    const orders = ordersPage?.orders ?? [];
+    const totalPages = Math.ceil((ordersPage?.total ?? 0) / PAGE_SIZE);
 
     // Update order status
     const updateStatusMutation = useMutation({
@@ -116,26 +144,21 @@ const OrdersManager = ({ tenantId }: OrdersManagerProps) => {
         },
     });
 
-    // Filter orders
-    const filteredOrders = orders?.filter((order) => {
-        const matchesSearch =
+    // Filtro de busca client-side (só na página atual)
+    const filteredOrders = orders.filter((order) => {
+        if (!searchQuery) return true;
+        return (
             order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             order.order_number.toString().includes(searchQuery) ||
-            order.customer_whatsapp?.includes(searchQuery);
-
-        const matchesStatus =
-            statusFilter === "all" ||
-            order.payment_status === statusFilter ||
-            order.shipping_status === statusFilter;
-
-        return matchesSearch && matchesStatus;
+            order.customer_whatsapp?.includes(searchQuery)
+        );
     });
 
-    // Stats
-    const totalOrders = orders?.length || 0;
-    const totalRevenue = orders?.filter(o => o.payment_status === "paid").reduce((acc, o) => acc + o.total, 0) || 0;
-    const pendingOrders = orders?.filter(o => o.payment_status === "pending").length || 0;
-    const shippedOrders = orders?.filter(o => o.shipping_status === "shipped" || o.shipping_status === "delivered").length || 0;
+    // Stats calculadas sobre o resumo leve (sem itens/dados pesados)
+    const totalOrders = statsData?.length || 0;
+    const totalRevenue = statsData?.filter(o => o.payment_status === "paid").reduce((acc, o) => acc + o.total, 0) || 0;
+    const pendingOrders = statsData?.filter(o => o.payment_status === "pending").length || 0;
+    const shippedOrders = statsData?.filter(o => o.shipping_status === "shipped" || o.shipping_status === "delivered").length || 0;
 
     const handleWhatsAppClick = (whatsapp: string, orderNumber: number) => {
         const phone = whatsapp.replace(/\D/g, "");
@@ -403,6 +426,19 @@ const OrdersManager = ({ tenantId }: OrdersManagerProps) => {
                         </p>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Paginação */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-muted-foreground">
+                        Página {page} de {totalPages} · {ordersPage?.total ?? 0} pedidos
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Anterior</Button>
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Próxima</Button>
+                    </div>
+                </div>
             )}
 
             {/* Order Detail Dialog */}

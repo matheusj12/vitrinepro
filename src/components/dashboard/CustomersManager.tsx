@@ -61,12 +61,15 @@ interface CustomersManagerProps {
     tenantId: string;
 }
 
+const CUST_PAGE_SIZE = 25;
+
 const CustomersManager = ({ tenantId }: CustomersManagerProps) => {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTab, setSelectedTab] = useState("all");
+    const [page, setPage] = useState(1);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -86,20 +89,25 @@ const CustomersManager = ({ tenantId }: CustomersManagerProps) => {
         zip: "",
     });
 
-    // Fetch customers
-    const { data: customers, isLoading } = useQuery({
-        queryKey: ["customers", tenantId],
+    // Fetch customers paginado
+    const { data: custPage, isLoading } = useQuery({
+        queryKey: ["customers", tenantId, page],
+        staleTime: 2 * 60 * 1000,
         queryFn: async () => {
-            const { data, error } = await supabase
+            const { data, error, count } = await supabase
                 .from("customers")
-                .select("*")
+                .select("*", { count: "exact" })
                 .eq("tenant_id", tenantId)
-                .order("created_at", { ascending: false });
+                .order("created_at", { ascending: false })
+                .range((page - 1) * CUST_PAGE_SIZE, page * CUST_PAGE_SIZE - 1);
 
             if (error) throw error;
-            return data as Customer[];
+            return { customers: data as Customer[], total: count ?? 0 };
         },
     });
+
+    const customers = custPage?.customers ?? [];
+    const totalCustPages = Math.ceil((custPage?.total ?? 0) / CUST_PAGE_SIZE);
 
     // Create/Update customer
     const saveMutation = useMutation({
@@ -128,19 +136,26 @@ const CustomersManager = ({ tenantId }: CustomersManagerProps) => {
         },
     });
 
-    // Delete customer
+    // Delete customer (otimista)
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
             const { error } = await supabase.from("customers").delete().eq("id", id);
             if (error) throw error;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["customers", tenantId] });
-            toast.success("Cliente excluído!");
+        onMutate: async (id: string) => {
+            await queryClient.cancelQueries({ queryKey: ["customers", tenantId, page] });
+            const previous = queryClient.getQueryData(["customers", tenantId, page]);
+            queryClient.setQueryData(["customers", tenantId, page], (old: any) =>
+                old ? { ...old, customers: old.customers.filter((c: Customer) => c.id !== id) } : old
+            );
+            return { previous };
         },
-        onError: () => {
+        onError: (_err, _id, context: any) => {
+            if (context?.previous) queryClient.setQueryData(["customers", tenantId, page], context.previous);
             toast.error("Erro ao excluir cliente");
         },
+        onSuccess: () => toast.success("Cliente excluído!"),
+        onSettled: () => queryClient.invalidateQueries({ queryKey: ["customers", tenantId] }),
     });
 
     const resetForm = () => {
@@ -238,11 +253,11 @@ const CustomersManager = ({ tenantId }: CustomersManagerProps) => {
         return matchesSearch;
     });
 
-    // Stats
-    const totalCustomers = customers?.length || 0;
-    const totalWithWhatsapp = customers?.filter((c) => c.whatsapp).length || 0;
-    const totalBuyers = customers?.filter((c) => c.total_orders > 0).length || 0;
-    const totalRevenue = customers?.reduce((acc, c) => acc + (c.total_spent || 0), 0) || 0;
+    // Stats (baseadas na página atual — counts completos ficam no servidor)
+    const totalCustomers = custPage?.total || 0;
+    const totalWithWhatsapp = customers.filter((c) => c.whatsapp).length || 0;
+    const totalBuyers = customers.filter((c) => c.total_orders > 0).length || 0;
+    const totalRevenue = customers.reduce((acc, c) => acc + (c.total_spent || 0), 0) || 0;
 
     if (isLoading) {
         return (
@@ -666,6 +681,19 @@ const CustomersManager = ({ tenantId }: CustomersManagerProps) => {
                         )}
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Paginação */}
+            {totalCustPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-muted-foreground">
+                        Página {page} de {totalCustPages} · {custPage?.total ?? 0} clientes
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Anterior</Button>
+                        <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalCustPages, p + 1))} disabled={page === totalCustPages}>Próxima</Button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -18,9 +18,12 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - period);
 
+  const ANALYTICS_STALE = 5 * 60 * 1000; // 5 min — analytics não muda a cada segundo
+
   // Visitas à vitrine
   const { data: viewsData, isLoading: viewsLoading, error: viewsError } = useQuery({
     queryKey: ["analytics-views", tenantId, period],
+    staleTime: ANALYTICS_STALE,
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
@@ -44,6 +47,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   // Produtos mais vistos
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ["analytics-products", tenantId, period],
+    staleTime: ANALYTICS_STALE,
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
@@ -67,6 +71,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   // Cliques no WhatsApp
   const { data: whatsappData, isLoading: whatsappLoading, error: whatsappError } = useQuery({
     queryKey: ["analytics-whatsapp", tenantId, period],
+    staleTime: ANALYTICS_STALE,
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
@@ -90,6 +95,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   // Orçamentos criados
   const { data: quotesData, isLoading: quotesLoading, error: quotesError } = useQuery({
     queryKey: ["analytics-quotes", tenantId, period],
+    staleTime: ANALYTICS_STALE,
     queryFn: async () => {
       try {
         const { data, error } = await supabase.functions.invoke("analytics-reports", {
@@ -113,6 +119,7 @@ const AnalyticsDashboard = ({ tenantId }: AnalyticsDashboardProps) => {
   // Visitas por dia (para gráfico)
   const { data: dailyViewsData = [] } = useQuery({
     queryKey: ["analytics-daily", tenantId, period],
+    staleTime: ANALYTICS_STALE,
     queryFn: async () => {
       try {
         const { data, error } = await supabase
