@@ -317,7 +317,15 @@ export const SectionRenderer = ({
                 );
 
             case "bottom_nav":
-                return <StorefrontBottomNav key={section.id} slug={tenant?.slug!} cartCount={totalItems} />;
+                return (
+                    <StorefrontBottomNav
+                        key={section.id}
+                        slug={tenant?.slug!}
+                        cartCount={totalItems}
+                        whatsappNumber={contact.whatsapp_number}
+                        tenantName={tenant?.company_name}
+                    />
+                );
 
             // ---- Optional sections ----
             case "cta":
