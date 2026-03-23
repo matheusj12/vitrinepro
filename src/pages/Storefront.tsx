@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenantBySlug } from "@/hooks/useTenant";
 import { useCart } from "@/hooks/useCart";
 import { useTheme } from "@/hooks/useTheme";
+import { useDynamicManifest } from "@/hooks/useDynamicManifest";
 import { Product, Category, Banner, Theme, StoreSettings } from "@/types/database";
 import { toast } from "sonner";
 import { StorefrontLayoutDefault } from "@/components/storefront/layouts/StorefrontLayoutDefault";
@@ -47,9 +48,17 @@ const Storefront = () => {
 
   useTheme(tenant?.id, storeSettings?.theme_id ?? undefined);
 
+  const logoUrl = (storeSettings as any)?.branding?.logo_url as string | undefined;
+
+  useDynamicManifest({
+    name: tenant?.company_name || "",
+    themeColor: tenant?.primary_color || "#f97316",
+    logoUrl,
+    slug: slug || "",
+  });
+
   // Favicon dinâmico
   useEffect(() => {
-    const logoUrl = (storeSettings as any)?.branding?.logo_url as string | undefined;
     let linkEl = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
     if (!linkEl) {
       linkEl = document.createElement("link");

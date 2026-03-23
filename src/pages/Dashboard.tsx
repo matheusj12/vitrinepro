@@ -38,8 +38,10 @@ import {
   Moon,
   Copy,
   Share2,
-  ExternalLink
+  ExternalLink,
+  Download
 } from "lucide-react";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -67,6 +69,8 @@ const Dashboard = () => {
 
   // Hook de assinatura para verificar trial
   const { isTrialExpiring, isTrialExpired, daysRemaining } = useSubscription(tenantData?.tenant?.id || null);
+
+  const { canInstall, install } = usePWAInstall();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -411,6 +415,12 @@ const Dashboard = () => {
                   {isDark ? <Sun className="h-5 w-5 text-orange-400" /> : <Moon className="h-5 w-5 text-slate-700" />}
                 </Button>
                 <div className="hidden md:flex items-center gap-2">
+                  {canInstall && (
+                    <Button variant="outline" size="sm" onClick={install} className="gap-2 rounded-full hidden sm:flex">
+                      <Download className="h-4 w-4" />
+                      Instalar App
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

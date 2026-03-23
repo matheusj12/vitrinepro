@@ -17,13 +17,14 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/*.svg"],
       manifest: {
-        name: "VitrinePro — Sua Loja Online",
+        name: "VitrinePro - Gerenciar Loja",
         short_name: "VitrinePro",
-        description: "Sua vitrine digital profissional",
+        description: "Gerencie sua loja online de qualquer lugar",
         theme_color: "#f97316",
         background_color: "#ffffff",
         display: "standalone",
-        start_url: "/",
+        start_url: "/dashboard",
+        scope: "/dashboard",
         icons: [
           {
             src: "/pwa-192.png",
@@ -35,22 +36,6 @@ export default defineConfig(({ mode }) => ({
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
-          },
-        ],
-        screenshots: [
-          {
-            src: "/screenshot-vitrine.jpeg",
-            sizes: "1280x720",
-            type: "image/jpeg",
-            form_factor: "wide",
-            label: "Vitrine de produtos",
-          },
-          {
-            src: "/screenshot-produto.jpeg",
-            sizes: "390x844",
-            type: "image/jpeg",
-            form_factor: "narrow",
-            label: "Página do produto",
           },
         ],
       },
