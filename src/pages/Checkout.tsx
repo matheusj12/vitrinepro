@@ -298,8 +298,14 @@ const Checkout = () => {
         }
 
         setIsProcessing(true);
-        await createOrderMutation.mutateAsync();
-        setIsProcessing(false);
+        try {
+            await createOrderMutation.mutateAsync();
+            // Não resetar aqui em sucesso — a tela de sucesso aparece após orderCreated=true
+            // e o botão desaparece junto com o form
+        } catch {
+            // Só resetar em erro para permitir nova tentativa
+            setIsProcessing(false);
+        }
     };
 
     const copyPixCode = () => {

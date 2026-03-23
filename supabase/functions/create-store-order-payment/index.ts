@@ -116,13 +116,17 @@ serve(async (req) => {
         }
 
         // Calcular data de vencimento
-        const dueDate = new Date();
-        if (payment_method === "PIX") {
-            dueDate.setMinutes(dueDate.getMinutes() + 30); // PIX expira em 30 min
-        } else {
-            dueDate.setDate(dueDate.getDate() + 3); // Boleto vence em 3 dias
+        // PIX: usa a data de HOJE (Asaas controla a expiração interna do QR code)
+        // Boleto: vence em 3 dias corridos
+        const now = new Date();
+        const dueDate = new Date(now);
+        if (payment_method !== "PIX") {
+            dueDate.setDate(dueDate.getDate() + 3);
         }
-        const dueDateStr = dueDate.toISOString().split("T")[0]; // YYYY-MM-DD
+        // Ajustar para fuso horário de Brasília (UTC-3) para que a data seja a correta no Brasil
+        const brOffset = -3 * 60; // -180 minutos
+        const localDue = new Date(dueDate.getTime() + brOffset * 60000);
+        const dueDateStr = localDue.toISOString().split("T")[0]; // YYYY-MM-DD
 
         // Criar cobrança no Asaas
         const chargePayload = {
@@ -152,7 +156,7 @@ serve(async (req) => {
         let pix_qr_code: string | undefined;
         let pix_qr_code_url: string | undefined;
 
-        if (payment_method === "PIX" || payment_method !== "BOLETO_BANCARIO") {
+        if (payment_method === "PIX") {
             const pixRes = await fetch(`${baseUrl}/payments/${charge.id}/pixQrCode`, {
                 headers: { "access_token": apiKey },
             });
