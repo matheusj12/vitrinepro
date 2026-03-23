@@ -289,11 +289,28 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
-      toast.success("Produto excluído.");
+    onMutate: async (id: string) => {
+      // Cancela refetches em andamento para não sobrescrever o update otimista
+      await queryClient.cancelQueries({ queryKey: ["products", tenantId] });
+      const previous = queryClient.getQueryData(["products", tenantId]);
+      // Remove o produto do cache imediatamente (sem esperar o servidor)
+      queryClient.setQueryData(["products", tenantId], (old: any[]) =>
+        old ? old.filter((p) => p.id !== id) : old
+      );
+      return { previous };
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any, _id, context: any) => {
+      // Reverte em caso de erro
+      if (context?.previous) {
+        queryClient.setQueryData(["products", tenantId], context.previous);
+      }
+      toast.error(err.message);
+    },
+    onSuccess: () => toast.success("Produto excluído."),
+    onSettled: () => {
+      // Sincroniza em background sem bloquear a UI
+      queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
+    },
   });
 
   const duplicateMutation = useMutation({
