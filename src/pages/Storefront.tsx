@@ -183,7 +183,7 @@ const Storefront = () => {
       } else {
         let query = supabase
           .from("products")
-          .select("id, name, slug, price, images, image_url, video_url, featured, min_quantity, category_id, active, sku, description, stock_control_enabled, stock_quantity")
+          .select("id, name, slug, price, images, video_url, featured, min_quantity, category_id, active, sku, stock_control_enabled, stock_quantity")
           .eq("tenant_id", tenant.id)
           .eq("active", true);
 

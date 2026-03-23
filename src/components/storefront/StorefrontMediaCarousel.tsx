@@ -72,8 +72,10 @@ export const StorefrontMediaCarousel: React.FC<StorefrontMediaCarouselProps> = (
                     src={slide.src}
                     alt={`mídia ${idx + 1}`}
                     className={`w-full ${heightClass} object-cover`}
-                    loading="lazy"
-                    decoding="async"
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    decoding={idx === 0 ? "sync" : "async"}
+                    fetchPriority={idx === 0 ? "high" : "low"}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/images/default-product-512.png";
                     }}

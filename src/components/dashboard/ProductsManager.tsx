@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, Category } from "@/types/database";
+import { compressImage } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -418,9 +419,14 @@ const ProductsManager = ({ tenantId }: ProductsManagerProps) => {
 
     const uploadedUrls: string[] = [];
     for (const file of selected) {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      // Comprime antes do upload: max 1200px, WebP 85% — reduz 50-80% no tamanho
+      const compressed = await compressImage(file);
+      const ext = compressed.name.split('.').pop()?.toLowerCase() || 'webp';
       const path = `products/${tenantId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from('images').upload(path, compressed, {
+        upsert: true,
+        contentType: compressed.type,
+      });
       if (!error) {
         const { data: urlData } = supabase.storage.from('images').getPublicUrl(path);
         uploadedUrls.push(urlData.publicUrl);

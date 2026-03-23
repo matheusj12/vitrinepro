@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Product } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import StorefrontMediaCarousel from "@/components/storefront/StorefrontMediaCarousel";
@@ -23,12 +23,13 @@ export const StorefrontProductGrid = ({
   if (isLoading) {
     return (
       <div className={gridClasses}>
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+        {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} className="animate-pulse space-y-3">
-            <div className="bg-muted rounded-2xl aspect-square w-full" />
-            <div className="space-y-1">
-              <div className="h-4 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-1/2" />
+            <div className="bg-gradient-to-br from-muted to-muted/60 rounded-2xl aspect-[4/5] sm:aspect-square w-full" />
+            <div className="space-y-2 px-1">
+              <div className="h-4 bg-muted rounded-full w-3/4" />
+              <div className="h-3 bg-muted/70 rounded-full w-1/2" />
+              <div className="h-5 bg-muted rounded-full w-1/3" />
             </div>
           </div>
         ))}
