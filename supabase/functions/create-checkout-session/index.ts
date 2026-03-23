@@ -248,22 +248,25 @@ async function createAsaasCheckout(
         }
     }
 
-    // Create payment link
-    const paymentLinkResponse = await fetch(`${baseUrl}/paymentLinks`, {
+    // Calcular próxima data de vencimento (hoje + 1 dia para dar tempo do cliente pagar)
+    const nextDueDate = new Date();
+    nextDueDate.setDate(nextDueDate.getDate() + 1);
+    const nextDueDateStr = nextDueDate.toISOString().split("T")[0];
+
+    // Criar assinatura recorrente mensal no Asaas
+    const subscriptionResponse = await fetch(`${baseUrl}/subscriptions`, {
         method: "POST",
         headers: {
             "access_token": apiKey,
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            name: `VitrinePro - Plano ${plan.name}`,
-            description: plan.description || `Assinatura mensal do plano ${plan.name}`,
-            billingType: "UNDEFINED", // Permite PIX, Boleto e Cartão
-            chargeType: "RECURRENT",  // Assinatura recorrente (compatível com subscriptionCycle)
+            customer: customerId,
+            billingType: "UNDEFINED",
             value: priceInReais,
-            dueDateLimitDays: 7,
-            subscriptionCycle: "MONTHLY",
-            notificationEnabled: true,
+            nextDueDate: nextDueDateStr,
+            cycle: "MONTHLY",
+            description: `VitrinePro - Plano ${plan.name}`,
             externalReference: JSON.stringify({
                 tenant_id: membership.tenant_id,
                 plan_id: plan.id,
@@ -272,10 +275,10 @@ async function createAsaasCheckout(
         }),
     });
 
-    if (!paymentLinkResponse.ok) {
-        const errorData = await paymentLinkResponse.text();
-        console.error("Asaas paymentLink error:", errorData);
-        let asaasMessage = "Erro ao criar link de pagamento no Asaas";
+    if (!subscriptionResponse.ok) {
+        const errorData = await subscriptionResponse.text();
+        console.error("Asaas subscription error:", errorData);
+        let asaasMessage = "Erro ao criar assinatura no Asaas";
         try {
             const parsed = JSON.parse(errorData);
             if (parsed.errors?.length > 0) {
@@ -287,6 +290,25 @@ async function createAsaasCheckout(
         throw new Error(asaasMessage);
     }
 
-    const paymentLinkData = await paymentLinkResponse.json();
-    return paymentLinkData.url;
+    const subscriptionData = await subscriptionResponse.json();
+
+    // Buscar a primeira cobrança gerada pela assinatura para obter a URL de pagamento
+    const paymentsResponse = await fetch(
+        `${baseUrl}/subscriptions/${subscriptionData.id}/payments`,
+        { headers: { "access_token": apiKey } }
+    );
+
+    if (paymentsResponse.ok) {
+        const paymentsData = await paymentsResponse.json();
+        if (paymentsData.data?.length > 0) {
+            const firstPayment = paymentsData.data[0];
+            if (firstPayment.invoiceUrl) return firstPayment.invoiceUrl;
+            if (firstPayment.bankSlipUrl) return firstPayment.bankSlipUrl;
+        }
+    }
+
+    // Fallback: usar invoiceUrl da própria assinatura
+    if (subscriptionData.invoiceUrl) return subscriptionData.invoiceUrl;
+
+    throw new Error("Asaas não retornou URL de pagamento. Verifique o dashboard do Asaas.");
 }
