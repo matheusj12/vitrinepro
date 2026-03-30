@@ -233,7 +233,10 @@ async function createAsaasCheckout(
         const customerData = await customerResponse.json();
         customerId = customerData.id;
     } else {
-        // Customer might already exist, try to find
+        const customerErrorText = await customerResponse.text();
+        console.error("Asaas customer creation failed:", customerResponse.status, customerErrorText);
+
+        // Cliente pode já existir, tentar buscar por email
         const searchResponse = await fetch(
             `${baseUrl}/customers?email=${encodeURIComponent(user.email)}`,
             {
@@ -244,7 +247,17 @@ async function createAsaasCheckout(
         if (searchData.data && searchData.data.length > 0) {
             customerId = searchData.data[0].id;
         } else {
-            throw new Error("Erro ao criar cliente no Asaas");
+            // Retornar erro detalhado do Asaas
+            let asaasDetail = "";
+            try {
+                const parsed = JSON.parse(customerErrorText);
+                if (parsed.errors?.length > 0) {
+                    asaasDetail = ": " + parsed.errors.map((e: any) => e.description || e.message).join("; ");
+                } else if (parsed.message) {
+                    asaasDetail = ": " + parsed.message;
+                }
+            } catch {}
+            throw new Error(`Erro ao criar cliente no Asaas${asaasDetail} (status ${customerResponse.status})`);
         }
     }
 

@@ -57,3 +57,4 @@ Thumbs.db
 .github/
 AGENTS.md
 .env.example
+.vercel
