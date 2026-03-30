@@ -200,12 +200,13 @@ async function createAsaasCheckout(
     successUrl?: string,
     cancelUrl?: string
 ): Promise<string> {
-    const apiKey = settings.asaas_api_key;
+    // API key vem de Supabase Secret (mais seguro que banco de dados)
+    const apiKey = Deno.env.get("ASAAS_API_KEY") || settings.asaas_api_key;
     if (!apiKey) {
-        throw new Error("Asaas não configurado");
+        throw new Error("Asaas não configurado. Adicione ASAAS_API_KEY nos Supabase Secrets.");
     }
 
-    const isSandbox = settings.asaas_sandbox;
+    const isSandbox = Deno.env.get("ASAAS_SANDBOX") === "true" || settings.asaas_sandbox;
     const baseUrl = isSandbox
         ? "https://sandbox.asaas.com/api/v3"
         : "https://www.asaas.com/api/v3";

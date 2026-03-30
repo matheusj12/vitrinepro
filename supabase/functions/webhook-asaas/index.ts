@@ -17,13 +17,7 @@ serve(async (req) => {
         const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
         // Validar token do webhook (configurado no superadmin + painel Asaas)
-        const { data: sysSettings } = await supabaseClient
-            .from("system_settings")
-            .select("payment")
-            .limit(1)
-            .maybeSingle();
-
-        const webhookToken = (sysSettings?.payment as any)?.asaas_webhook_token;
+        const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
         if (webhookToken) {
             const incomingToken = req.headers.get("asaas-access-token");
             if (incomingToken !== webhookToken) {
