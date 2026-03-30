@@ -51,36 +51,6 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
         }
     };
 
-    // Usuário já usou trial se subscription tem trial_ends_at preenchido
-    const hasUsedTrial = subscription !== null && subscription.trial_ends_at !== null;
-
-    const handleActivateTrial = async (plan: Plan) => {
-        setChangingPlan(plan.id);
-        try {
-            const { error } = await supabase.functions.invoke("activate-trial", {
-                body: { planId: plan.id },
-            });
-
-            if (error) {
-                let detail = "Erro ao ativar trial.";
-                try {
-                    const body = await (error as any).context?.json?.();
-                    if (body?.error) detail = body.error;
-                } catch {}
-                throw new Error(detail);
-            }
-
-            toast.success(`Trial de ${plan.trial_days} dias ativado!`, {
-                description: `Aproveite o plano ${plan.name} gratuitamente.`,
-            });
-            await refetch();
-        } catch (err: any) {
-            toast.error("Erro ao ativar trial", { description: err.message });
-        } finally {
-            setChangingPlan(null);
-        }
-    };
-
     const handleCheckout = async (plan: Plan) => {
         setChangingPlan(plan.id);
         try {
@@ -209,17 +179,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
             };
         }
 
-        // Plano pago, sem trial usado ou primeiro acesso
-        if (!hasUsedTrial && plan.trial_days > 0) {
-            return {
-                label: `Iniciar ${plan.trial_days} dias grátis`,
-                disabled: false,
-                action: () => handleActivateTrial(plan),
-                variant: "default",
-            };
-        }
-
-        // Plano pago, já usou trial ou sem trial
+        // Plano pago
         return {
             label: "Assinar Agora",
             disabled: false,
