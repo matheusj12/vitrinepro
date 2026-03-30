@@ -206,7 +206,9 @@ async function createAsaasCheckout(
         throw new Error("Asaas não configurado. Adicione ASAAS_API_KEY nos Supabase Secrets.");
     }
 
-    const isSandbox = Deno.env.get("ASAAS_SANDBOX") === "true" || settings.asaas_sandbox;
+    // Env var tem prioridade sobre o banco
+    const sandboxEnv = Deno.env.get("ASAAS_SANDBOX");
+    const isSandbox = sandboxEnv !== undefined ? sandboxEnv === "true" : settings.asaas_sandbox;
     const baseUrl = isSandbox
         ? "https://sandbox.asaas.com/api/v3"
         : "https://www.asaas.com/api/v3";
