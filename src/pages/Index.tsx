@@ -33,9 +33,7 @@ import {
   Flower2,
   Wrench,
   Clock,
-  FileText,
-  Video,
-  CheckCircle2
+  FileText
 } from "lucide-react";
 
 // Animated counter component
@@ -552,80 +550,6 @@ const Index = () => {
             <div className="w-1 h-2 bg-muted-foreground/50 rounded-full" />
           </motion.div>
         </motion.div>
-      </section>
-
-      {/* Apresentação do Sistema */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-orange-500/5 to-background pointer-events-none" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
-              <Video className="h-4 w-4" />
-              Veja o sistema em ação
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
-              Tudo que você precisa para{" "}
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-                vender pela internet
-              </span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Assista à apresentação completa e veja como o VitrinePro transforma qualquer negócio em uma loja digital profissional
-            </p>
-          </motion.div>
-
-          {/* Video embed */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="relative max-w-4xl mx-auto mb-16"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-3xl blur-3xl transform scale-105" />
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30 bg-background aspect-video">
-              <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Apresentação VitrinePro"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          </motion.div>
-
-          {/* Pontos-chave abaixo do vídeo */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {[
-              { title: "Vitrine profissional", desc: "Catálogo bonito, rápido e no celular" },
-              { title: "Pedidos no WhatsApp", desc: "Clientes fazem pedidos direto pra você" },
-              { title: "Painel fácil", desc: "Gerencie produtos, estoque e aparência" },
-              { title: "Pronto em minutos", desc: "Sem técnico, sem complicação" },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="flex gap-3 items-start"
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">{item.desc}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* Social Proof - Niches */}
