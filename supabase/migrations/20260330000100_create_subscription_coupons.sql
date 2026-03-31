@@ -23,7 +23,7 @@ ALTER TABLE public.subscription_coupons ENABLE ROW LEVEL SECURITY;
 -- Superadmin gerencia tudo
 CREATE POLICY "superadmin_manage_coupons" ON public.subscription_coupons
     FOR ALL USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 3)
+        EXISTS (SELECT 1 FROM public.tenant_memberships WHERE user_id = auth.uid() AND role = 3)
     );
 
 -- Qualquer usuário autenticado pode ler cupons ativos (para validar no checkout)
