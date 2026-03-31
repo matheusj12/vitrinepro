@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Check, Crown, Loader2, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -28,6 +30,8 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [changingPlan, setChangingPlan] = useState<string | null>(null);
     const { subscription, plan: currentPlan, daysRemaining, isTrialExpired, refetch } = useSubscription(tenantId);
+    const [cpfDialog, setCpfDialog] = useState<{ open: boolean; plan: Plan | null }>({ open: false, plan: null });
+    const [cpfValue, setCpfValue] = useState("");
 
     useEffect(() => {
         loadPlans();
@@ -51,13 +55,27 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
         }
     };
 
-    const handleCheckout = async (plan: Plan) => {
+    const handleCheckout = (plan: Plan) => {
+        setCpfValue("");
+        setCpfDialog({ open: true, plan });
+    };
+
+    const handleCheckoutConfirm = async () => {
+        const plan = cpfDialog.plan;
+        if (!plan) return;
+        const cpf = cpfValue.replace(/\D/g, "");
+        if (cpf.length !== 11 && cpf.length !== 14) {
+            toast.error("CPF ou CNPJ inválido");
+            return;
+        }
+        setCpfDialog({ open: false, plan: null });
         setChangingPlan(plan.id);
         try {
             const { data, error } = await supabase.functions.invoke("create-checkout-session", {
                 body: {
                     planId: plan.id,
                     gateway: "asaas",
+                    cpfCnpj: cpf,
                     successUrl: window.location.origin + "/dashboard?payment=success",
                     cancelUrl: window.location.origin + "/dashboard?payment=canceled",
                 },
@@ -79,10 +97,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
             }
         } catch (err: any) {
             console.error("Checkout error:", err);
-            toast.error("Erro ao iniciar checkout", {
-                description: err.message,
-                duration: 6000,
-            });
+            toast.error("Erro ao iniciar checkout", { description: err.message, duration: 6000 });
         } finally {
             setChangingPlan(null);
         }
@@ -324,6 +339,28 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
             <div className="text-center text-sm text-muted-foreground">
                 <p>✓ Cancele quando quiser &nbsp; ✓ Sem taxas ocultas &nbsp; ✓ Suporte por WhatsApp</p>
             </div>
+
+            <Dialog open={cpfDialog.open} onOpenChange={(open) => setCpfDialog({ open, plan: cpfDialog.plan })}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Confirmar assinatura</DialogTitle>
+                        <DialogDescription>
+                            Informe seu CPF ou CNPJ para continuar com o pagamento.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <Input
+                            placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                            value={cpfValue}
+                            onChange={(e) => setCpfValue(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleCheckoutConfirm()}
+                        />
+                        <Button className="w-full" onClick={handleCheckoutConfirm}>
+                            Continuar para pagamento
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

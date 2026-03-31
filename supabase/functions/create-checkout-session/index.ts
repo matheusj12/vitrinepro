@@ -9,6 +9,7 @@ const corsHeaders = {
 interface CheckoutRequest {
     planId: string;
     gateway: "mercadopago" | "asaas";
+    cpfCnpj?: string;
     successUrl?: string;
     cancelUrl?: string;
 }
@@ -58,7 +59,7 @@ serve(async (req) => {
         }
 
         const body: CheckoutRequest = await req.json();
-        const { planId, gateway, successUrl, cancelUrl } = body;
+        const { planId, gateway, cpfCnpj, successUrl, cancelUrl } = body;
 
         // Get plan details
         const { data: plan, error: planError } = await supabaseClient
@@ -101,7 +102,8 @@ serve(async (req) => {
                 membership,
                 user,
                 successUrl,
-                cancelUrl
+                cancelUrl,
+                cpfCnpj
             );
         } else {
             return new Response(JSON.stringify({ error: "Gateway inválido" }), {
@@ -198,7 +200,8 @@ async function createAsaasCheckout(
     membership: any,
     user: any,
     successUrl?: string,
-    cancelUrl?: string
+    cancelUrl?: string,
+    cpfCnpj?: string
 ): Promise<string> {
     // API key vem de Supabase Secret (mais seguro que banco de dados)
     const apiKey = Deno.env.get("ASAAS_API_KEY") || settings.asaas_api_key;
@@ -226,6 +229,7 @@ async function createAsaasCheckout(
         body: JSON.stringify({
             name: tenant.company_name,
             email: user.email,
+            cpfCnpj: cpfCnpj,
             externalReference: membership.tenant_id,
         }),
     });
