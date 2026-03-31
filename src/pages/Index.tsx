@@ -582,6 +582,61 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Showcase - Loja de Auto Peças */}
+      <section className="py-24 bg-gradient-to-b from-background to-secondary/30 relative">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
+              <Sparkles className="h-4 w-4" />
+              Cases de Sucesso
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
+              Vitrine de <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Auto Peças</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Arraste para o lado e veja como fica uma loja real utilizando nossa plataforma.
+            </p>
+          </motion.div>
+
+          <div className="max-w-6xl mx-auto relative group">
+            <div className="flex gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {[1, 2, 3].map((num) => (
+                <motion.div
+                  key={num}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: num * 0.1 }}
+                  className="flex-shrink-0 w-[85%] sm:w-[60%] md:w-[45%] lg:w-[31%] snap-center mx-auto"
+                >
+                  <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-orange-500/10 border-[6px] border-gray-900 bg-gray-900 hover:border-gray-800 transition-colors duration-300">
+                    {/* iPhone Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 flex items-center justify-center gap-2 rounded-b-3xl z-20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
+                      <div className="w-12 h-1.5 rounded-full bg-gray-800" />
+                    </div>
+                    
+                    {/* Screen Content */}
+                    <div className="relative rounded-[2rem] overflow-hidden bg-white aspect-[9/19.5]">
+                      <img 
+                        src={`/showcase-autopecas-${num}.png`} 
+                        alt={`Vitrine Auto Peças Tela ${num}`}
+                        className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-700"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Problems Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
