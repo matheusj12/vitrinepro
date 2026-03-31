@@ -10,6 +10,7 @@ interface CheckoutRequest {
     planId: string;
     gateway: "mercadopago" | "asaas";
     cpfCnpj?: string;
+    billingType?: "PIX" | "CREDIT_CARD";
     successUrl?: string;
     cancelUrl?: string;
 }
@@ -59,7 +60,7 @@ serve(async (req) => {
         }
 
         const body: CheckoutRequest = await req.json();
-        const { planId, gateway, cpfCnpj, successUrl, cancelUrl } = body;
+        const { planId, gateway, cpfCnpj, billingType, successUrl, cancelUrl } = body;
 
         // Get plan details
         const { data: plan, error: planError } = await supabaseClient
@@ -103,7 +104,8 @@ serve(async (req) => {
                 user,
                 successUrl,
                 cancelUrl,
-                cpfCnpj
+                cpfCnpj,
+                billingType
             );
         } else {
             return new Response(JSON.stringify({ error: "Gateway inválido" }), {
@@ -201,7 +203,8 @@ async function createAsaasCheckout(
     user: any,
     successUrl?: string,
     cancelUrl?: string,
-    cpfCnpj?: string
+    cpfCnpj?: string,
+    billingType?: string
 ): Promise<string> {
     // API key vem de Supabase Secret (mais seguro que banco de dados)
     const apiKey = Deno.env.get("ASAAS_API_KEY") || settings.asaas_api_key;
@@ -282,7 +285,7 @@ async function createAsaasCheckout(
         },
         body: JSON.stringify({
             customer: customerId,
-            billingType: "UNDEFINED",
+            billingType: billingType || "CREDIT_CARD",
             value: priceInReais,
             nextDueDate: nextDueDateStr,
             cycle: "MONTHLY",

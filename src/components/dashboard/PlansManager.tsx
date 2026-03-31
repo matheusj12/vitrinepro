@@ -30,7 +30,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [changingPlan, setChangingPlan] = useState<string | null>(null);
     const { subscription, plan: currentPlan, daysRemaining, isTrialExpired, refetch } = useSubscription(tenantId);
-    const [cpfDialog, setCpfDialog] = useState<{ open: boolean; plan: Plan | null }>({ open: false, plan: null });
+    const [cpfDialog, setCpfDialog] = useState<{ open: boolean; plan: Plan | null; billingType: "PIX" | "CREDIT_CARD" }>({ open: false, plan: null, billingType: "CREDIT_CARD" });
     const [cpfValue, setCpfValue] = useState("");
 
     useEffect(() => {
@@ -57,10 +57,10 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
 
     const handleCheckout = (plan: Plan) => {
         setCpfValue("");
-        setCpfDialog({ open: true, plan });
+        setCpfDialog({ open: true, plan, billingType: "CREDIT_CARD" });
     };
 
-    const handleCheckoutConfirm = async () => {
+    const handleCheckoutConfirm = async (billingType: "PIX" | "CREDIT_CARD") => {
         const plan = cpfDialog.plan;
         if (!plan) return;
         const cpf = cpfValue.replace(/\D/g, "");
@@ -68,7 +68,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
             toast.error("CPF ou CNPJ inválido");
             return;
         }
-        setCpfDialog({ open: false, plan: null });
+        setCpfDialog({ open: false, plan: null, billingType: "CREDIT_CARD" });
         setChangingPlan(plan.id);
         try {
             const { data, error } = await supabase.functions.invoke("create-checkout-session", {
@@ -76,6 +76,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                     planId: plan.id,
                     gateway: "asaas",
                     cpfCnpj: cpf,
+                    billingType,
                     successUrl: window.location.origin + "/dashboard?payment=success",
                     cancelUrl: window.location.origin + "/dashboard?payment=canceled",
                 },
@@ -340,7 +341,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                 <p>✓ Cancele quando quiser &nbsp; ✓ Sem taxas ocultas &nbsp; ✓ Suporte por WhatsApp</p>
             </div>
 
-            <Dialog open={cpfDialog.open} onOpenChange={(open) => setCpfDialog({ open, plan: cpfDialog.plan })}>
+            <Dialog open={cpfDialog.open} onOpenChange={(open) => setCpfDialog({ open, plan: cpfDialog.plan, billingType: cpfDialog.billingType })}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Confirmar assinatura</DialogTitle>
@@ -353,11 +354,15 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                             placeholder="000.000.000-00 ou 00.000.000/0001-00"
                             value={cpfValue}
                             onChange={(e) => setCpfValue(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleCheckoutConfirm()}
                         />
-                        <Button className="w-full" onClick={handleCheckoutConfirm}>
-                            Continuar para pagamento
-                        </Button>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button variant="outline" className="w-full" onClick={() => handleCheckoutConfirm("PIX")}>
+                                Pagar com PIX
+                            </Button>
+                            <Button className="w-full" onClick={() => handleCheckoutConfirm("CREDIT_CARD")}>
+                                Cartão de Crédito
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
