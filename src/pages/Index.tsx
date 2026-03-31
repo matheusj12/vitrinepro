@@ -582,61 +582,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Showcase - Loja de Auto Peças */}
-      <section className="py-24 bg-gradient-to-b from-background to-secondary/30 relative">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-sm font-medium text-orange-600 dark:text-orange-400 mb-4">
-              <Sparkles className="h-4 w-4" />
-              Cases de Sucesso
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
-              Vitrine de <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Auto Peças</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Arraste para o lado e veja como fica uma loja real utilizando nossa plataforma.
-            </p>
-          </motion.div>
-
-          <div className="max-w-6xl mx-auto relative group">
-            <div className="flex gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {[1, 2, 3].map((num) => (
-                <motion.div
-                  key={num}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: num * 0.1 }}
-                  className="flex-shrink-0 w-[85%] sm:w-[60%] md:w-[45%] lg:w-[31%] snap-center mx-auto"
-                >
-                  <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-orange-500/10 border-[6px] border-gray-900 bg-gray-900 hover:border-gray-800 transition-colors duration-300">
-                    {/* iPhone Notch */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 flex items-center justify-center gap-2 rounded-b-3xl z-20">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-                      <div className="w-12 h-1.5 rounded-full bg-gray-800" />
-                    </div>
-                    
-                    {/* Screen Content */}
-                    <div className="relative rounded-[2rem] overflow-hidden bg-white aspect-[9/19.5]">
-                      <img 
-                        src={`/showcase-autopecas-${num}.png`} 
-                        alt={`Vitrine Auto Peças Tela ${num}`}
-                        className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-700"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Problems Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
@@ -803,6 +748,65 @@ const Index = () => {
               </motion.div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Showcase - Lojas Parceiras */}
+      <section className="py-24 bg-gradient-to-b from-secondary/20 to-secondary/50 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-sm font-medium text-green-600 dark:text-green-400 mb-4">
+              <Star className="h-4 w-4" />
+              Lojas Parceiras
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-4">
+              Veja o resultado na <span className="bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">prática</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Exemplo real de uma loja parceira de Auto Peças utilizando o VitrinePro. Arraste para o lado para espiar como fica a experiência do cliente!
+            </p>
+          </motion.div>
+
+          {/* Desktop/Tablet/Mobile Carousel Mockup */}
+          <div className="max-w-6xl mx-auto relative">
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-green-500/20 to-transparent -translate-y-1/2 z-0 hidden lg:block" />
+            
+            <div className="flex gap-6 overflow-x-auto pb-12 pt-4 px-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {[1, 2, 3].map((num) => (
+                <motion.div
+                  key={num}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: num * 0.15, duration: 0.6 }}
+                  className="flex-shrink-0 w-[85%] sm:w-[60%] md:w-[45%] lg:w-[31%] snap-center mx-auto relative z-10"
+                >
+                  <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-green-900/10 border-[8px] border-gray-900 bg-gray-900 hover:-translate-y-2 hover:border-gray-800 transition-all duration-500 hover:shadow-green-500/20 group">
+                    {/* iPhone Speaker/Camera Details */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 flex items-center justify-center gap-2.5 rounded-b-3xl z-30">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-800/80 shadow-inner" />
+                      <div className="w-14 h-1.5 rounded-full bg-gray-800/80 shadow-inner" />
+                    </div>
+                    
+                    {/* Screen Interface */}
+                    <div className="relative rounded-[1.8rem] overflow-hidden bg-white aspect-[9/19.5]">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                      <img 
+                        src={`/showcase-autopecas-${num}.png`} 
+                        alt={`Amostra Loja Parceira Auto Peças ${num}`}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
