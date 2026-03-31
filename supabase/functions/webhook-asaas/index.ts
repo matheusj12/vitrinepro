@@ -58,7 +58,10 @@ serve(async (req) => {
             return new Response("OK", { status: 200 });
         }
 
-        const { order_id, tenant_id, plan_id } = externalRef;
+        // Suporta chaves longas (legado) e curtas (t/p para respeitar limite de 100 chars)
+        const order_id = externalRef.order_id;
+        const tenant_id = externalRef.tenant_id || externalRef.t;
+        const plan_id = externalRef.plan_id || externalRef.p;
 
         if (order_id) {
             // ── Pagamento de pedido de loja ──────────────────────────────

@@ -283,11 +283,8 @@ async function createAsaasCheckout(
             nextDueDate: nextDueDateStr,
             cycle: "MONTHLY",
             description: `VitrinePro - Plano ${plan.name}`,
-            externalReference: JSON.stringify({
-                tenant_id: membership.tenant_id,
-                plan_id: plan.id,
-                user_id: user.id,
-            }),
+            // Chaves curtas para respeitar limite de 100 chars do Asaas
+            externalReference: JSON.stringify({ t: membership.tenant_id, p: plan.id }),
         }),
     });
 
