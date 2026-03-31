@@ -1056,10 +1056,10 @@ const Index = () => {
                       <span className="text-4xl font-bold">R$ 0</span>
                       <span className="text-muted-foreground">/mês</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">Para testar a plataforma</p>
+                    <p className="text-sm text-muted-foreground mt-2">Comece agora, sem pagar nada</p>
                   </div>
                   <div className="space-y-4 mb-8">
-                    {["Até 10 produtos", "1 banner", "Catálogo básico", "Marca VitrinePro"].map((feature, i) => (
+                    {["Até 10 produtos", "1 banner", "Catálogo básico", "WhatsApp integrado", "Marca VitrinePro"].map((feature, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
@@ -1090,10 +1090,10 @@ const Index = () => {
                   <div className="text-center mb-6">
                     <span className="text-sm font-medium text-orange-600 uppercase tracking-wider">Pro</span>
                     <div className="mt-2">
-                      <span className="text-4xl font-bold">R$ 129</span>
+                      <span className="text-4xl font-bold">R$ 59,90</span>
                       <span className="text-muted-foreground">/mês</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">Para quem quer crescer</p>
+                    <p className="text-sm text-muted-foreground mt-2">Tudo que você precisa para crescer</p>
                   </div>
                   <div className="space-y-4 mb-8">
                     {[
@@ -1101,8 +1101,10 @@ const Index = () => {
                       "Banners ilimitados",
                       "Temas premium",
                       "Analytics avançado",
-                      "Remoção da marca",
-                      "Suporte prioritário"
+                      "Remoção da marca VitrinePro",
+                      "Domínio personalizado",
+                      "Suporte prioritário",
+                      "Múltiplos usuários"
                     ].map((feature, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-orange-500 flex-shrink-0" />
@@ -1133,13 +1135,13 @@ const Index = () => {
                   <div className="text-center mb-6">
                     <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Essencial</span>
                     <div className="mt-2">
-                      <span className="text-4xl font-bold">R$ 59</span>
+                      <span className="text-4xl font-bold">R$ 29,90</span>
                       <span className="text-muted-foreground">/mês</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">Para começar a vender</p>
+                    <p className="text-sm text-muted-foreground mt-2">Perfeito para começar seu negócio online</p>
                   </div>
                   <div className="space-y-4 mb-8">
-                    {["Até 50 produtos", "2 banners", "Catálogo completo", "WhatsApp integrado", "1 usuário"].map((feature, i) => (
+                    {["Até 50 produtos", "3 banners personalizáveis", "Catálogo completo", "WhatsApp integrado", "1 usuário", "Suporte por email"].map((feature, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
