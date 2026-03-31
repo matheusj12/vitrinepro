@@ -228,9 +228,6 @@ const AboutStore = () => {
                     <p className="text-sm">
                         {tenant?.company_name} © {new Date().getFullYear()} - Todos os direitos reservados.
                     </p>
-                    <div className="mt-2 text-xs">
-                        Powered by <a href="https://www.gotisolucoes.com.br" target="_blank" rel="noreferrer" className="hover:text-primary font-medium">Goti Soluções</a>
-                    </div>
                 </div>
             </footer>
 

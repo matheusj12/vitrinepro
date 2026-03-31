@@ -175,9 +175,6 @@ const StorefrontFooter = ({ tenant }: { tenant: any }) => (
         <div className="container mx-auto px-4 text-center">
             <h3 className="font-bold text-xl mb-2">{tenant?.company_name}</h3>
             <p className="text-sm text-muted-foreground mb-8">Obrigado pela preferência.</p>
-            <div className="text-xs text-muted-foreground opacity-50">
-                Powered by Goti Soluções
-            </div>
         </div>
     </footer>
 );

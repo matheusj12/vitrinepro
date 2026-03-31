@@ -324,17 +324,6 @@ export const SectionRenderer = ({
                                 <div className="space-y-4 max-w-md mx-auto">
                                     <p className="text-sm">{tenant?.company_name} - Todos os direitos reservados.</p>
                                 </div>
-                                <div className="pt-8 border-t w-full max-w-xs mx-auto">
-                                    <p className="text-xs text-muted-foreground mb-3">Powered by</p>
-                                    <a
-                                        href="https://www.gotisolucoes.com.br/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-background hover:bg-accent transition-colors text-xs font-medium"
-                                    >
-                                        Goti Soluções 🚀
-                                    </a>
-                                </div>
                             </div>
                         </div>
                     </footer>
