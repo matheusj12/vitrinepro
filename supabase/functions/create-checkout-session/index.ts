@@ -11,6 +11,7 @@ interface CheckoutRequest {
     gateway: "mercadopago" | "asaas";
     cpfCnpj?: string;
     billingType?: "PIX" | "CREDIT_CARD";
+    couponCode?: string;
     successUrl?: string;
     cancelUrl?: string;
 }
@@ -60,7 +61,7 @@ serve(async (req) => {
         }
 
         const body: CheckoutRequest = await req.json();
-        const { planId, gateway, cpfCnpj, billingType, successUrl, cancelUrl } = body;
+        const { planId, gateway, cpfCnpj, billingType, couponCode, successUrl, cancelUrl } = body;
 
         // Get plan details
         const { data: plan, error: planError } = await supabaseClient
@@ -97,6 +98,25 @@ serve(async (req) => {
                 cancelUrl
             );
         } else if (gateway === "asaas") {
+            // Validar cupom se informado
+            let couponData: { discount_type: string; discount_value: number; pix_only: boolean; id: string } | null = null;
+            if (couponCode) {
+                const { data: coupon } = await supabaseClient
+                    .from("subscription_coupons" as any)
+                    .select("id, discount_type, discount_value, pix_only, expires_at, max_uses, current_uses")
+                    .eq("code", couponCode.toUpperCase())
+                    .eq("active", true)
+                    .maybeSingle() as { data: any };
+                if (coupon) {
+                    const expired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
+                    const exhausted = coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses;
+                    const pixMismatch = coupon.pix_only && billingType !== "PIX";
+                    if (!expired && !exhausted && !pixMismatch) {
+                        couponData = coupon;
+                    }
+                }
+            }
+
             checkoutUrl = await createAsaasCheckout(
                 paymentSettings,
                 plan,
@@ -105,8 +125,17 @@ serve(async (req) => {
                 successUrl,
                 cancelUrl,
                 cpfCnpj,
-                billingType
+                billingType,
+                couponData
             );
+
+            // Incrementar uso do cupom após criar a assinatura
+            if (couponData) {
+                await supabaseClient
+                    .from("subscription_coupons" as any)
+                    .update({ current_uses: (couponData as any).current_uses + 1 } as any)
+                    .eq("id", couponData.id);
+            }
         } else {
             return new Response(JSON.stringify({ error: "Gateway inválido" }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -204,7 +233,8 @@ async function createAsaasCheckout(
     successUrl?: string,
     cancelUrl?: string,
     cpfCnpj?: string,
-    billingType?: string
+    billingType?: string,
+    coupon?: { discount_type: string; discount_value: number } | null
 ): Promise<string> {
     // API key vem de Supabase Secret (mais seguro que banco de dados)
     const apiKey = Deno.env.get("ASAAS_API_KEY") || settings.asaas_api_key;
@@ -221,6 +251,16 @@ async function createAsaasCheckout(
 
     const tenant = membership.tenants as any;
     const priceInReais = plan.price_cents / 100;
+
+    // Aplicar desconto do cupom
+    let finalPrice = priceInReais;
+    if (coupon) {
+        if (coupon.discount_type === "percent") {
+            finalPrice = Math.round(priceInReais * (1 - coupon.discount_value / 100) * 100) / 100;
+        } else {
+            finalPrice = Math.max(1, priceInReais - coupon.discount_value);
+        }
+    }
 
     // First, create or get customer
     const customerResponse = await fetch(`${baseUrl}/customers`, {
@@ -286,7 +326,7 @@ async function createAsaasCheckout(
         body: JSON.stringify({
             customer: customerId,
             billingType: billingType || "CREDIT_CARD",
-            value: priceInReais,
+            value: finalPrice,
             nextDueDate: nextDueDateStr,
             cycle: "MONTHLY",
             description: `VitrinePro - Plano ${plan.name}`,

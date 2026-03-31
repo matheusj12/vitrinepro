@@ -32,6 +32,9 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
     const { subscription, plan: currentPlan, daysRemaining, isTrialExpired, refetch } = useSubscription(tenantId);
     const [cpfDialog, setCpfDialog] = useState<{ open: boolean; plan: Plan | null; billingType: "PIX" | "CREDIT_CARD" }>({ open: false, plan: null, billingType: "CREDIT_CARD" });
     const [cpfValue, setCpfValue] = useState("");
+    const [couponCode, setCouponCode] = useState("");
+    const [couponDiscount, setCouponDiscount] = useState<{ type: "percent" | "fixed"; value: number; pix_only: boolean } | null>(null);
+    const [validatingCoupon, setValidatingCoupon] = useState(false);
 
     useEffect(() => {
         loadPlans();
@@ -57,7 +60,26 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
 
     const handleCheckout = (plan: Plan) => {
         setCpfValue("");
+        setCouponCode("");
+        setCouponDiscount(null);
         setCpfDialog({ open: true, plan, billingType: "CREDIT_CARD" });
+    };
+
+    const validateCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setValidatingCoupon(true);
+        const { data, error } = await (supabase as any)
+            .from("subscription_coupons")
+            .select("discount_type, discount_value, pix_only, expires_at, max_uses, current_uses")
+            .eq("code", couponCode.toUpperCase().trim())
+            .eq("active", true)
+            .maybeSingle() as { data: any; error: any };
+        setValidatingCoupon(false);
+        if (error || !data) { toast.error("Cupom inválido ou expirado"); setCouponDiscount(null); return; }
+        if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Cupom expirado"); setCouponDiscount(null); return; }
+        if (data.max_uses !== null && data.current_uses >= data.max_uses) { toast.error("Cupom esgotado"); setCouponDiscount(null); return; }
+        setCouponDiscount({ type: data.discount_type as "percent" | "fixed", value: data.discount_value, pix_only: data.pix_only });
+        toast.success(data.discount_type === "percent" ? `${data.discount_value}% de desconto aplicado!` : `R$ ${data.discount_value} de desconto aplicado!`);
     };
 
     const handleCheckoutConfirm = async (billingType: "PIX" | "CREDIT_CARD") => {
@@ -77,6 +99,7 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                     gateway: "asaas",
                     cpfCnpj: cpf,
                     billingType,
+                    couponCode: couponCode.toUpperCase().trim() || undefined,
                     successUrl: window.location.origin + "/dashboard?payment=success",
                     cancelUrl: window.location.origin + "/dashboard?payment=canceled",
                 },
@@ -355,12 +378,31 @@ export const PlansManager = ({ tenantId }: PlansManagerProps) => {
                             value={cpfValue}
                             onChange={(e) => setCpfValue(e.target.value)}
                         />
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Cupom de desconto (opcional)"
+                                value={couponCode}
+                                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponDiscount(null); }}
+                                className="font-mono"
+                            />
+                            <Button variant="outline" type="button" onClick={validateCoupon} disabled={validatingCoupon || !couponCode.trim()}>
+                                {validatingCoupon ? "..." : "Aplicar"}
+                            </Button>
+                        </div>
+                        {couponDiscount && (
+                            <div className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2 flex items-center gap-2">
+                                ✓ {couponDiscount.type === "percent" ? `${couponDiscount.value}% de desconto` : `R$ ${couponDiscount.value} de desconto`} aplicado
+                                {couponDiscount.pix_only && " · válido apenas no PIX"}
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                             <Button variant="outline" className="w-full" onClick={() => handleCheckoutConfirm("PIX")}>
                                 Pagar com PIX
                             </Button>
-                            <Button className="w-full" onClick={() => handleCheckoutConfirm("CREDIT_CARD")}>
+                            <Button className="w-full" onClick={() => handleCheckoutConfirm("CREDIT_CARD")}
+                                disabled={couponDiscount?.pix_only === true}>
                                 Cartão de Crédito
+                                {couponDiscount?.pix_only && <span className="text-xs ml-1 opacity-60">(cupom: PIX)</span>}
                             </Button>
                         </div>
                     </div>
