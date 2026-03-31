@@ -237,92 +237,94 @@ const HeroShowcase = () => {
   }, []);
 
   return (
-    <div className="relative w-full">
-      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-3xl blur-3xl transform -rotate-2 scale-105" />
-      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-white/30 dark:border-gray-700/50 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-1 p-3 bg-gray-50/80 dark:bg-gray-800/80 border-b border-border/30">
-          <div className="flex gap-1.5 mr-3">
-            <div className="w-3 h-3 rounded-full bg-red-400" />
-            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-            <div className="w-3 h-3 rounded-full bg-green-400" />
-          </div>
-          <div className="flex gap-1 flex-1">
-            {heroScreenshots.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveTab(i)}
-                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  i === activeTab
-                    ? "bg-white dark:bg-gray-700 shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="relative w-full flex justify-center">
+      {/* Glow de fundo */}
+      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-3xl blur-3xl transform scale-105" />
 
-        <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800" style={{ aspectRatio: "4/3" }}>
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={activeTab}
-              src={heroScreenshots[activeTab].src}
-              alt={heroScreenshots[activeTab].label}
-              className="w-full h-full object-cover object-top"
-              initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ duration: 0.4 }}
-            />
-          </AnimatePresence>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`badge-${activeTab}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3 }}
-              className="absolute bottom-4 left-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border/30"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-semibold">{heroScreenshots[activeTab].badge}</span>
+      {/* Moldura do celular */}
+      <div className="relative w-[280px] sm:w-[300px]">
+        {/* Corpo do telefone */}
+        <div className="relative bg-gray-900 rounded-[3rem] p-3 shadow-2xl border-4 border-gray-800">
+          {/* Notch */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-gray-900 rounded-b-2xl z-10 flex items-center justify-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-700" />
+            <div className="w-12 h-1.5 rounded-full bg-gray-700" />
+          </div>
+
+          {/* Tela */}
+          <div className="relative rounded-[2.4rem] overflow-hidden bg-white" style={{ aspectRatio: "9/19.5" }}>
+            {/* Barra de status */}
+            <div className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-sm px-4 pt-8 pb-1 flex justify-between items-center">
+              <span className="text-[10px] font-semibold text-gray-800">9:41</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-2 border border-gray-600 rounded-sm relative">
+                  <div className="absolute inset-0.5 right-0.5 bg-gray-600 rounded-sm w-2/3" />
+                </div>
               </div>
-            </motion.div>
-          </AnimatePresence>
-          <div className="absolute bottom-4 right-4 flex gap-1.5">
-            {heroScreenshots.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveTab(i)}
-                className={`transition-all duration-300 rounded-full ${
-                  i === activeTab ? "w-5 h-2 bg-orange-500" : "w-2 h-2 bg-white/60 hover:bg-white/90"
-                }`}
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeTab}
+                src={heroScreenshots[activeTab].src}
+                alt={heroScreenshots[activeTab].label}
+                className="w-full h-full object-cover object-top"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.35 }}
               />
-            ))}
+            </AnimatePresence>
+
+            {/* Badge de contexto */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`badge-${activeTab}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="absolute bottom-4 left-3 right-3 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-border/30"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                  <span className="text-xs font-semibold">{heroScreenshots[activeTab].badge}</span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Home bar */}
+          <div className="flex justify-center mt-2">
+            <div className="w-24 h-1 rounded-full bg-gray-600" />
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 dark:bg-gray-800/80 border-t border-border/30">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
-              <ShoppingBag className="h-3 w-3 text-white" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">agencia062.com/loja/suanome</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-green-600 font-medium">Online</span>
-          </div>
+        {/* Botões laterais */}
+        <div className="absolute -right-1.5 top-20 w-1 h-14 bg-gray-700 rounded-r-lg" />
+        <div className="absolute -left-1.5 top-16 w-1 h-8 bg-gray-700 rounded-l-lg" />
+        <div className="absolute -left-1.5 top-28 w-1 h-8 bg-gray-700 rounded-l-lg" />
+
+        {/* Dots de navegação */}
+        <div className="flex justify-center gap-1.5 mt-4">
+          {heroScreenshots.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveTab(i)}
+              className={`transition-all duration-300 rounded-full ${
+                i === activeTab ? "w-5 h-2 bg-orange-500" : "w-2 h-2 bg-gray-300 hover:bg-gray-400"
+              }`}
+            />
+          ))}
         </div>
       </div>
 
+      {/* Floating card: Novo pedido */}
       <motion.div
         initial={{ opacity: 0, y: 20, x: 20 }}
         animate={{ opacity: 1, y: 0, x: 0 }}
         transition={{ delay: 1.2 }}
-        className="absolute -right-5 top-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40 min-w-[150px]"
+        className="absolute -right-2 top-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40 min-w-[150px]"
       >
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
@@ -335,11 +337,12 @@ const HeroShowcase = () => {
         </div>
       </motion.div>
 
+      {/* Floating card: +32% vendas */}
       <motion.div
         initial={{ opacity: 0, y: -20, x: -20 }}
         animate={{ opacity: 1, y: 0, x: 0 }}
         transition={{ delay: 1.5 }}
-        className="absolute -left-5 bottom-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40"
+        className="absolute -left-2 bottom-1/4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 border border-border/40"
       >
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
