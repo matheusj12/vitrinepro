@@ -11,7 +11,6 @@ import UsersManager from "@/components/superadmin/UsersManager";
 import { LogsViewer } from "@/components/superadmin/LogsViewer";
 import PlansManager from "@/components/superadmin/PlansManager";
 import SystemSettings from "@/components/superadmin/SystemSettings";
-import PaymentSettingsManager from "@/components/superadmin/PaymentSettingsManager";
 
 interface DashboardData {
   metrics: {
@@ -91,7 +90,6 @@ const SuperAdmin = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="plans">Planos</TabsTrigger>
-            <TabsTrigger value="payments"><CreditCard className="h-4 w-4 mr-1" />Pagamentos</TabsTrigger>
             <TabsTrigger value="settings"><Settings className="h-4 w-4 mr-1" />Configurações</TabsTrigger>
             <TabsTrigger value="logs">Logs</TabsTrigger>
           </TabsList>
@@ -210,9 +208,6 @@ const SuperAdmin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payments">
-            <PaymentSettingsManager />
-          </TabsContent>
 
           <TabsContent value="settings">
             <SystemSettings />
