@@ -264,8 +264,8 @@ Aguardando confirmação de pagamento/entrega.`;
                 <Card key={item.product.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex gap-4 items-center">
                     <div className="h-20 w-20 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
-                      {item.product.image_url ? (
-                        <img src={item.product.image_url} alt={item.product.name} className="h-full w-full object-cover" />
+                      {(item.product.images?.[0] || item.product.image_url) ? (
+                        <img src={item.product.images?.[0] || item.product.image_url!} alt={item.product.name} className="h-full w-full object-cover" />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">Sem img</div>
                       )}
